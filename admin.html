@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin – Tawa Junction</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFF6E3;--sf:#fff;--ink:#2B1A10;--mu:#7A6657;--red:#D2381F;--ln:#EADFC8;--ok:#1E8E3E;--gold:#F4B400}
+@media (prefers-color-scheme:dark){:root{--bg:#1A110B;--sf:#2A1C13;--ink:#FBEFD9;--mu:#C1A890;--red:#EC5B41;--ln:#43332A}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 "DM Sans",system-ui,sans-serif;padding-bottom:150px}
+h1,h2,h3{font-family:"Bricolage Grotesque",Georgia,serif;margin:0}
+.wrap{max-width:640px;margin:0 auto;padding:0 14px}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--ln)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;gap:8px;height:56px}
+.sub,#status{color:var(--mu);font-size:13px}
+#status{color:var(--ok);font-weight:700}
+input:not([type=checkbox]),select{width:100%;padding:11px 12px;border:1.5px solid var(--ln);border-radius:10px;background:var(--sf);color:var(--ink);font:16px "DM Sans",sans-serif}
+label{display:block;font-weight:500;font-size:14px;margin:12px 0 4px}
+.chk{display:flex;align-items:center;gap:8px}.chk input{width:20px;height:20px}
+.two{display:flex;gap:8px}
+.btn{width:100%;margin-top:12px;border:0;border-radius:12px;background:var(--red);color:#fff;font:700 16px "DM Sans",sans-serif;padding:14px;cursor:pointer}
+.btn.dng{background:transparent;color:var(--red);border:1.5px solid var(--red)}
+.lnk{background:none;border:0;color:var(--red);font:700 14px "DM Sans",sans-serif;cursor:pointer;padding:6px}
+.lnk.full{width:100%;margin-top:6px;color:var(--mu)}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:16px;padding:14px;margin:14px 0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.cat{background:var(--sf);border:1px solid var(--ln);border-radius:16px;padding:6px 14px 14px;margin:14px 0}
+.chead{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+.irow{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--ln)}
+.in{flex:1;min-width:0;display:flex;flex-direction:column}
+.dot{width:14px;height:14px;border:1.5px solid;border-radius:3px;display:inline-grid;place-items:center;flex:none}
+.dot::after{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.dot.v{color:var(--ok)}.dot.n{color:#B3261E}
+.add{width:100%;margin-top:8px;padding:10px;border:1.5px dashed var(--ln);border-radius:12px;background:none;color:var(--ink);font:700 14px "DM Sans",sans-serif;cursor:pointer}
+.add.big{border-color:var(--red);color:var(--red)}
+.ph{margin:18px 0 6px;font-size:18px}
+.prow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0;padding:8px 0;border-bottom:1px solid var(--ln)}
+.prow>span:first-child{flex:1}.pin{display:flex;align-items:center;gap:4px;width:110px}
+.sw{position:relative;width:48px;height:28px;flex:none;margin:0}
+.sw input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;z-index:1}
+.sw i{position:absolute;inset:0;border-radius:999px;background:var(--ln);transition:background .2s}
+.sw i::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s}
+.sw input:checked+i{background:var(--ok)}.sw input:checked+i::after{transform:translateX(20px)}
+.sw input:focus-visible+i,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold)}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--sf);border-top:1px solid var(--ln);display:flex;padding-bottom:env(safe-area-inset-bottom,0)}
+nav button{flex:1;background:none;border:0;padding:14px 4px;color:var(--mu);font:700 14px "DM Sans",sans-serif;cursor:pointer}
+nav button[aria-current="true"]{color:var(--red);box-shadow:inset 0 3px var(--red)}
+#savebar{position:fixed;left:0;right:0;bottom:calc(50px + env(safe-area-inset-bottom,0));z-index:6;padding:10px 14px;background:var(--bg);border-top:1px solid var(--ln)}
+#savebar .wrap{display:flex;align-items:center;gap:12px;padding:0}
+#savebar .btn{margin:0}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:20;display:flex;align-items:flex-end}
+.panel{background:var(--bg);width:100%;max-width:640px;margin:0 auto;border-radius:22px 22px 0 0;padding:18px 16px 24px;max-height:92%;overflow:auto}
+.err{color:var(--red);font-size:14px;min-height:20px;margin-top:6px}
+#login{max-width:380px;margin:12vh auto;padding:0 18px}
+</style>
+</head>
+<body>
+<div id="login">
+<h1>Tawa Junction Admin</h1><p class="sub">Sirf restaurant owner ke liye.</p>
+<label for="em">Email</label><input id="em" type="email" autocomplete="username">
+<label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
+<div class="err" id="lerr" role="alert"></div>
+<button class="btn" id="lgo">Login</button>
+</div>
+
+<div id="app" hidden>
+<header><div class="wrap"><h1 style="font-size:20px">Admin</h1><span id="status"></span><a id="cu" class="lnk" target="_blank" rel="noopener" hidden>Customer menu ↗</a><button class="lnk" id="out">Logout</button></div></header>
+<main class="wrap" id="view"></main>
+<div id="savebar" hidden><div class="wrap"><span class="sub" style="flex:1">Badlav abhi save nahi hue.</span><button class="btn" id="save" style="width:auto;padding:12px 18px">Save aur live karo</button></div></div>
+<nav id="nav"><button data-t="menu">Menu</button><button data-t="prices">Prices</button><button data-t="offers">Offers</button><button data-t="settings">Settings</button></nav>
+<div id="modal" hidden></div>
+</div>
+
+<script>
+// ===== Pehle yeh 3 cheezein bharo (Firebase se milengi) =====
+var FB_KEY="AIzaSyClhx1HgD2JdIJzPjPzT8ZJfrQrPCQ2pcI", FB_PROJECT="tawa-junction";
+var CUSTOMER_URL=""; // apni customer website ka link (optional)
+// ============================================================
+var DOC="https://firestore.googleapis.com/v1/projects/"+FB_PROJECT+"/databases/(default)/documents/config/menu";
+var ICONS=[["chow","Noodles"],["roll","Roll"],["momo","Momos"],["burger","Burger"],["pizza","Pizza"],["fries","Fries / Sides"],["drink","Drinks"],["plate","Plate (general)"]];
+var D=[["Chowmein","chow",[["Veg Chowmein","Sabzi aur sauce wali tawa noodles",70,"v"],["Egg Chowmein","Anda aur masaledar sauce",90,"n","b"],["Chicken Chowmein","Juicy chicken ke saath",110,"n"],["Schezwan Chowmein","Extra teekhi schezwan",100,"v"]]],
+["Rolls","roll",[["Veg Roll","Sabzi, pyaaz, mint chutney",50,"v"],["Paneer Roll","Masala paneer, pyaaz, chutney",80,"v"],["Egg Roll","Double anda, pyaaz, sauce",60,"n","b"],["Chicken Roll","Tikka chicken, laccha pyaaz",90,"n"]]],
+["Momos","momo",[["Veg Steamed Momos (6)","Garam bhaap wale, red chutney",60,"v"],["Veg Fried Momos (6)","Crispy fried",70,"v","b"],["Chicken Momos (6)","Steamed, juicy filling",80,"n"],["Peri Peri Momos (6)","Peri peri masala tossed",90,"v"]]],
+["Burger","burger",[["Aloo Tikki Burger","Classic tikki, mayo, onion",50,"v","b"],["Veg Cheese Burger","Cheese slice ke saath",70,"v"],["Chicken Burger","Crispy chicken patty",100,"n"]]],
+["Pizza","pizza",[["Margherita (7\")","Cheese aur tomato sauce",120,"v"],["Veg Loaded (7\")","Capsicum, corn, onion, olives",160,"v"],["Paneer Tikka (7\")","Tandoori paneer topping",180,"v","b"],["Chicken Tikka (7\")","Chicken tikka aur cheese",200,"n"]]],
+["Fries & Sides","fries",[["French Fries","Salted, crispy",60,"v"],["Peri Peri Fries","Teekha peri peri masala",80,"v","b"],["Veg Sandwich","Grilled, green chutney",50,"v"],["Garlic Bread (4)","Butter aur lahsun",90,"v"]]],
+["Drinks","drink",[["Cold Drink (300 ml)","Thanda aur fizzy",25,"v"],["Cold Coffee","Ice cream ke saath",70,"v","b"],["Masala Chai","Adrak elaichi wali",15,"v"],["Nimbu Soda","Sweet ya salted",30,"v"]]]];
+var CFG,AUTH=null,TAB="menu",dirty=false;
+var $=function(i){return document.getElementById(i)};
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function uid(){return "i"+Math.random().toString(36).slice(2,9)}
+function defaults(){return {settings:{name:"Tawa Junction",whatsapp:"917091328594",delivery:0,minOrder:0,open:true,closedMsg:"Abhi band hai. Thodi der baad aana."},discount:{on:false,pct:10,min:200},
+ categories:D.map(function(c){return {id:uid(),name:c[0],art:c[1],items:c[2].map(function(x){return {id:uid(),name:x[0],desc:x[1],price:x[2],type:x[3],best:x[4]=="b",offer:"",from:"",to:"",out:false}})}})}}
+function mark(){dirty=true;$("savebar").hidden=false;$("status").textContent=""}
+window.onbeforeunload=function(e){if(dirty){e.preventDefault();e.returnValue=""}};
+
+/* ---------- login / token ---------- */
+function post(url,body,form){return fetch(url,{method:"POST",headers:{"Content-Type":form?"application/x-www-form-urlencoded":"application/json"},body:form?body:JSON.stringify(body)}).then(function(r){return r.json()})}
+function setAuth(id,ref,exp){AUTH={id:id,ref:ref,exp:Date.now()+(+exp-60)*1000};try{localStorage.setItem("tj_ref",ref)}catch(e){}}
+function refresh(ref){return post("https://securetoken.googleapis.com/v1/token?key="+FB_KEY,"grant_type=refresh_token&refresh_token="+encodeURIComponent(ref),true).then(function(d){if(!d.id_token)throw 0;setAuth(d.id_token,d.refresh_token,d.expires_in)})}
+function token(){return Date.now()<AUTH.exp?Promise.resolve(AUTH.id):refresh(AUTH.ref).then(function(){return AUTH.id})}
+$("lgo").onclick=function(){
+ $("lerr").textContent="";
+ post("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key="+FB_KEY,{email:$("em").value.trim(),password:$("pw").value,returnSecureToken:true}).then(function(d){
+  if(!d.idToken){$("lerr").textContent="Email ya password galat hai.";return}
+  setAuth(d.idToken,d.refreshToken,d.expiresIn);start();
+ }).catch(function(){$("lerr").textContent="Internet ya Firebase key check karo."});
+};
+$("out").onclick=function(){try{localStorage.removeItem("tj_ref")}catch(e){}dirty=false;location.reload()};
+function start(){
+ $("login").hidden=true;$("app").hidden=false;
+ if(CUSTOMER_URL){$("cu").href=CUSTOMER_URL;$("cu").hidden=false}
+ $("view").innerHTML='<p class="sub">Load ho raha hai…</p>';
+ fetch(DOC+"?key="+FB_KEY).then(function(r){if(r.status==404)return null;if(!r.ok)throw 0;return r.json()}).then(function(d){
+  if(d&&d.fields&&d.fields.json){CFG=JSON.parse(d.fields.json.stringValue)}else{CFG=defaults();mark()}
+  view();
+ }).catch(function(){$("view").innerHTML='<p class="err">Menu load nahi ho paya. FB_KEY aur FB_PROJECT check karo.</p>'});
+}
+if(FB_KEY.indexOf("PASTE")==0){$("lerr").textContent="Pehle file ke upar FB_KEY aur FB_PROJECT paste karo."}
+else{var r0=null;try{r0=localStorage.getItem("tj_ref")}catch(e){}if(r0)refresh(r0).then(start).catch(function(){})}
+
+/* ---------- save ---------- */
+$("save").onclick=function(){
+ var b=this;b.disabled=true;b.textContent="Saving…";
+ token().then(function(t){return fetch(DOC+"?updateMask.fieldPaths=json&key="+FB_KEY,{method:"PATCH",headers:{"Authorization":"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify({fields:{json:{stringValue:JSON.stringify(CFG)}}})})})
+ .then(function(r){if(!r.ok)throw r.status;dirty=false;$("savebar").hidden=true;$("status").textContent="Live ho gaya ✓";setTimeout(function(){if(!dirty)$("status").textContent=""},4000)})
+ .catch(function(e){alert(e==403?"Permission nahi hai. Firebase rules mein apna email check karo.":"Save nahi ho paya. Dobara try karo.")})
+ .then(function(){b.disabled=false;b.textContent="Save aur live karo"});
+};
+
+/* ---------- views ---------- */
+function sw(k,on){return '<label class="sw"><input type="checkbox" data-k="'+k+'"'+(on?" checked":"")+' aria-label="switch"><i></i></label>'}
+function view(){
+ ({menu:vMenu,prices:vPrices,offers:vOffers,settings:vSettings})[TAB]();
+ document.querySelectorAll("#nav button").forEach(function(b){b.setAttribute("aria-current",b.dataset.t==TAB)});
+}
+function vMenu(){
+ var h='<div class="card row"><div><b>Dukaan abhi</b><div class="sub">'+(CFG.settings.open?"Khuli hai, customers order kar sakte hain":"Band hai, customers order nahi kar sakte")+'</div></div>'+sw("open",CFG.settings.open)+'</div>';
+ CFG.categories.forEach(function(c,ci){
+  h+='<div class="cat"><div class="chead"><h2>'+esc(c.name)+'</h2><button class="lnk" data-a="ecat" data-c="'+ci+'">Edit</button></div>';
+  c.items.forEach(function(it,ii){
+   h+='<div class="irow"><span class="dot '+it.type+'"></span><div class="in"><b>'+esc(it.name)+'</b><span class="sub">₹'+it.price+(it.best?" · Bestseller":"")+(it.offer?" · "+esc(it.offer):"")+(it.from?" · "+it.from+"–"+it.to:"")+'</span></div>'+sw("a-"+ci+"-"+ii,!it.out)+'<button class="lnk" data-a="eit" data-c="'+ci+'" data-i="'+ii+'">Edit</button></div>';
+  });
+  h+='<button class="add" data-a="nit" data-c="'+ci+'">+ Naya item</button></div>';
+ });
+ h+='<button class="add big" data-a="ncat">+ Naya category</button><p class="sub">Switch ON = available. OFF = customers ko Sold out dikhega.</p>';
+ $("view").innerHTML=h;
+}
+function vPrices(){
+ var h='<p class="sub">Yahan se saare prices ek saath badlo, phir neeche Save dabao.</p>';
+ CFG.categories.forEach(function(c,ci){
+  h+='<h2 class="ph">'+esc(c.name)+'</h2>';
+  c.items.forEach(function(it,ii){h+='<label class="prow"><span>'+esc(it.name)+'</span><span class="pin">₹<input type="number" min="0" inputmode="numeric" data-p="'+ci+'-'+ii+'" value="'+esc(it.price)+'"></span></label>'});
+ });
+ $("view").innerHTML=h;
+}
+function vOffers(){
+ var d=CFG.discount;
+ var h='<div class="card"><div class="row"><div><b>Order par discount</b><div class="sub">Bade order par percent chhoot</div></div>'+sw("disc",d.on)+'</div>'+
+ '<label>Kitne ₹ ke order par</label><input type="number" min="0" inputmode="numeric" data-f="d.min" value="'+esc(d.min)+'">'+
+ '<label>Kitne percent discount</label><input type="number" min="0" max="90" inputmode="numeric" data-f="d.pct" value="'+esc(d.pct)+'"></div>'+
+ '<h2 class="ph">Item par Offer tag</h2><p class="sub">Jaise "Combo deal" ya "10% off". Khali chhodo toh tag nahi dikhega.</p>';
+ CFG.categories.forEach(function(c,ci){c.items.forEach(function(it,ii){h+='<label class="prow"><span>'+esc(it.name)+'</span><span style="width:48%"><input data-o="'+ci+'-'+ii+'" value="'+esc(it.offer)+'" placeholder="Offer tag"></span></label>'})});
+ $("view").innerHTML=h;
+}
+function vSettings(){
+ var s=CFG.settings;
+ $("view").innerHTML='<div class="card"><label>Restaurant ka naam</label><input data-f="s.name" value="'+esc(s.name)+'">'+
+ '<label>WhatsApp number (91 ke saath, jaise 917091328594)</label><input data-f="s.whatsapp" inputmode="numeric" value="'+esc(s.whatsapp)+'">'+
+ '<label>Delivery charge (₹)</label><input type="number" min="0" inputmode="numeric" data-f="s.delivery" value="'+esc(s.delivery)+'">'+
+ '<label>Minimum order (₹)</label><input type="number" min="0" inputmode="numeric" data-f="s.minOrder" value="'+esc(s.minOrder)+'">'+
+ '<label>Dukaan band hone par message</label><input data-f="s.closedMsg" value="'+esc(s.closedMsg)+'"></div>';
+}
+
+/* ---------- modals ---------- */
+function modal(h){$("modal").innerHTML='<div class="sheet"><div class="panel">'+h+'</div></div>';$("modal").hidden=false}
+function closeM(){$("modal").hidden=true;$("modal").innerHTML=""}
+function itemModal(ci,ii){
+ var nw=ii==null,it=nw?{name:"",desc:"",price:"",type:"v",best:false,offer:"",from:"",to:"",out:false}:CFG.categories[ci].items[ii];
+ var opts=CFG.categories.map(function(c,i){return '<option value="'+i+'"'+(i==ci?" selected":"")+'>'+esc(c.name)+'</option>'}).join("");
+ modal('<h3>'+(nw?"Naya item":"Item edit karo")+'</h3>'+
+ '<label>Naam</label><input id="f_n" value="'+esc(it.name)+'">'+
+ '<label>Description</label><input id="f_d" value="'+esc(it.desc)+'">'+
+ '<label>Price (₹)</label><input id="f_p" type="number" min="0" inputmode="numeric" value="'+esc(it.price)+'">'+
+ '<label>Category</label><select id="f_c">'+opts+'</select>'+
+ '<label>Type</label><select id="f_t"><option value="v"'+(it.type=="v"?" selected":"")+'>Veg</option><option value="n"'+(it.type=="n"?" selected":"")+'>Non-veg</option></select>'+
+ '<label>Offer tag (optional)</label><input id="f_o" value="'+esc(it.offer)+'" placeholder="Jaise: 10% off">'+
+ '<label>Sirf is time par dikhao (optional, dono bharo)</label><div class="two"><input id="f_f" type="time" value="'+esc(it.from)+'"><input id="f_to" type="time" value="'+esc(it.to)+'"></div>'+
+ '<label class="chk"><input type="checkbox" id="f_b"'+(it.best?" checked":"")+'> Bestseller tag</label>'+
+ '<label class="chk"><input type="checkbox" id="f_x"'+(it.out?" checked":"")+'> Sold out</label>'+
+ '<div class="err" id="merr" role="alert"></div><button class="btn" data-a="saveit" data-c="'+ci+'" data-i="'+(nw?"":ii)+'">Save item</button>'+
+ (nw?"":'<button class="btn dng" data-a="delit" data-c="'+ci+'" data-i="'+ii+'">Item delete karo</button>')+
+ '<button class="lnk full" data-a="close">Cancel</button>');
+}
+function saveItem(b){
+ var nm=$("f_n").value.trim(),pr=$("f_p").value;
+ if(!nm||pr===""||+pr<0){$("merr").textContent="Naam aur price zaroori hai.";return}
+ var ci=+b.dataset.c,ii=b.dataset.i===""?null:+b.dataset.i,nc=+$("f_c").value;
+ var it={id:ii==null?uid():CFG.categories[ci].items[ii].id,name:nm,desc:$("f_d").value.trim(),price:+pr,type:$("f_t").value,best:$("f_b").checked,offer:$("f_o").value.trim(),from:$("f_f").value,to:$("f_to").value,out:$("f_x").checked};
+ if(!(it.from&&it.to)){it.from="";it.to=""}
+ if(ii!=null&&nc==ci){CFG.categories[ci].items[ii]=it}else{if(ii!=null)CFG.categories[ci].items.splice(ii,1);CFG.categories[nc].items.push(it)}
+ closeM();mark();view();
+}
+function catModal(ci){
+ var nw=ci==null,c=nw?{name:"",art:"plate"}:CFG.categories[ci];
+ modal('<h3>'+(nw?"Naya category":"Category edit karo")+'</h3><label>Naam</label><input id="c_n" value="'+esc(c.name)+'" placeholder="Jaise: Combos, Desserts, Soups">'+
+ '<label>Tasveer</label><select id="c_a">'+ICONS.map(function(x){return '<option value="'+x[0]+'"'+(x[0]==c.art?" selected":"")+'>'+x[1]+'</option>'}).join("")+'</select>'+
+ '<div class="err" id="merr" role="alert"></div><button class="btn" data-a="savecat" data-c="'+(nw?"":ci)+'">Save category</button>'+
+ (nw?"":'<button class="btn dng" data-a="delcat" data-c="'+ci+'">Category delete karo</button>')+'<button class="lnk full" data-a="close">Cancel</button>');
+}
+function saveCat(b){
+ var nm=$("c_n").value.trim();if(!nm){$("merr").textContent="Naam likho.";return}
+ if(b.dataset.c===""){CFG.categories.push({id:uid(),name:nm,art:$("c_a").value,items:[]})}
+ else{var c=CFG.categories[+b.dataset.c];c.name=nm;c.art=$("c_a").value}
+ closeM();mark();view();
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click",function(e){
+ var b=e.target.closest("[data-a]");if(!b)return;
+ var a=b.dataset.a,c=+b.dataset.c,i=+b.dataset.i;
+ if(a=="close")closeM();
+ else if(a=="eit")itemModal(c,i);
+ else if(a=="nit")itemModal(c,null);
+ else if(a=="ecat")catModal(c);
+ else if(a=="ncat")catModal(null);
+ else if(a=="saveit")saveItem(b);
+ else if(a=="savecat")saveCat(b);
+ else if(a=="delit"){if(confirm("Is item ko delete karein?")){CFG.categories[c].items.splice(i,1);closeM();mark();view()}}
+ else if(a=="delcat"){if(confirm("Poori category aur uske saare items delete karein?")){CFG.categories.splice(c,1);closeM();mark();view()}}
+});
+$("nav").onclick=function(e){var b=e.target.closest("button");if(b){TAB=b.dataset.t;view();window.scrollTo(0,0)}};
+$("view").addEventListener("change",function(e){
+ var k=e.target.dataset.k;if(!k)return;
+ if(k=="open")CFG.settings.open=e.target.checked;
+ else if(k=="disc")CFG.discount.on=e.target.checked;
+ else if(k.slice(0,2)=="a-"){var p=k.split("-");CFG.categories[p[1]].items[p[2]].out=!e.target.checked}
+ mark();if(k=="open")view();
+});
+$("view").addEventListener("input",function(e){
+ var t=e.target,d=t.dataset,p;
+ if(d.p){p=d.p.split("-");CFG.categories[p[0]].items[p[1]].price=+t.value;mark()}
+ else if(d.o){p=d.o.split("-");CFG.categories[p[0]].items[p[1]].offer=t.value.trim();mark()}
+ else if(d.f){p=d.f.split(".");(p[0]=="s"?CFG.settings:CFG.discount)[p[1]]=t.type=="number"?+t.value:t.value;mark()}
+});
+</script>
+</body>
+</html>

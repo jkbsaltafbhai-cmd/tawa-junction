@@ -181,7 +181,7 @@ function vOffers(){
 }
 function vSettings(){
  var s=CFG.settings;
- $("view").innerHTML='<div class="card"><label>Restaurant name</label><input data-f="s.name" value="'+esc(s.name)+'">'+
+ $("view").innerHTML='<div class="card row"><div><b>Customer order tracker</b><div class="sub">Shows order progress to customers. Turn off on busy days.</div></div>'+sw("trk",s.tracker!==false)+'</div><div class="card"><label>Restaurant name</label><input data-f="s.name" value="'+esc(s.name)+'">'+
  '<label>WhatsApp number (with country code, e.g. 917091328594)</label><input data-f="s.whatsapp" inputmode="numeric" value="'+esc(s.whatsapp)+'">'+
  '<label>Delivery charge (₹)</label><input type="number" min="0" inputmode="numeric" data-f="s.delivery" value="'+esc(s.delivery)+'">'+
  '<label>Minimum order (₹)</label><input type="number" min="0" inputmode="numeric" data-f="s.minOrder" value="'+esc(s.minOrder)+'">'+
@@ -198,7 +198,7 @@ function loadOrders(){
  var rg=rangeTs(OR.range);
  token().then(function(t){return fetch(BASE+":runQuery?key="+FB_KEY,{method:"POST",headers:{"Authorization":"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify({structuredQuery:{from:[{collectionId:"orders"}],where:{compositeFilter:{op:"AND",filters:[{fieldFilter:{field:{fieldPath:"ts"},op:"GREATER_THAN_OR_EQUAL",value:{integerValue:String(rg[0])}}},{fieldFilter:{field:{fieldPath:"ts"},op:"LESS_THAN",value:{integerValue:String(rg[1])}}}]}},orderBy:[{field:{fieldPath:"ts"},direction:"DESCENDING"}],limit:500}})})})
  .then(function(r){if(!r.ok)throw r.status;return r.json()})
- .then(function(a){OR.list=a.filter(function(x){return x.document}).map(function(x){var f=x.document.fields,o={};try{o=JSON.parse(f.json.stringValue)}catch(e){}o._id=x.document.name.split("/").pop();o._st=f.status?f.status.stringValue:"new";o._ts=+f.ts.integerValue;return o})})
+ .then(function(a){OR.list=a.filter(function(x){return x.document}).map(function(x){var f=x.document.fields,o={};try{o=JSON.parse(f.json.stringValue)}catch(e){}o._id=x.document.name.split("/").pop();o._ut=Date.parse(String(x.document.updateTime).replace(/(\.\d{3})\d*Z$/,"$1Z"));o._st=f.status?f.status.stringValue:"new";o._ts=+f.ts.integerValue;return o})})
  .catch(function(e){OR.err=e==403?"Permission denied. Check your Firebase rules.":"Could not load orders."})
  .then(function(){OR.loading=false;if(TAB=="orders")vOrders()});
 }
@@ -210,6 +210,7 @@ function vOrders(){
  var L=OR.list,live=L.filter(function(o){return o._st!="cancelled"}),sales=0,by={},top={};
  live.forEach(function(o){var t=+o.total||0;sales+=t;var b=by[o.type]||(by[o.type]={n:0,s:0});b.n++;b.s+=t;(o.items||[]).forEach(function(i){var x=top[i.n]||(top[i.n]={q:0,r:0});x.q+=i.q;x.r+=i.q*i.p})});
  var n=live.length;
+ h+='<p class="sub">Tap the green button to update an order. After Ready, orders are marked Complete automatically in 1 hour.</p>';
  h+='<div class="stats"><div class="stat"><b>'+money(sales)+'</b><span>Total sales</span></div><div class="stat"><b>'+n+'</b><span>Orders</span></div><div class="stat"><b>'+money(n?sales/n:0)+'</b><span>Average order</span></div></div>';
  if(n){
   h+='<div class="card"><b>Order type</b>'+Object.keys(by).map(function(k){return '<div class="row sub" style="padding:4px 0"><span>'+esc(k)+'</span><span>'+by[k].n+' orders · '+money(by[k].s)+'</span></div>'}).join("")+'</div>';
@@ -218,7 +219,7 @@ function vOrders(){
  }
  if(!L.length)h+='<p class="sub">No orders in this period.</p>';
  L.forEach(function(o){var c=o._st=="cancelled";
-  h+='<div class="ord'+(c?" x":(o._st=="new"?" n":""))+'"><div class="row"><b>'+esc(o.name)+'</b><b>'+money(o.total)+'</b></div><div class="sub">'+fmt(o._ts)+' · '+esc(o.type)+" · "+(SL[o._st]||esc(o._st))+'</div><div style="margin-top:4px">'+(o.items||[]).map(function(i){return i.q+"× "+esc(i.n)}).join(", ")+'</div>'+
+  h+='<div class="ord'+(c?" x":(o._st=="new"?" n":""))+'"><div class="row"><b>'+esc(o.name)+'</b><b>'+money(o.total)+'</b></div><div class="sub">'+fmt(o._ts)+' · '+esc(o.type)+" · "+(SL[effSt(o)]||esc(o._st))+'</div><div style="margin-top:4px">'+(o.items||[]).map(function(i){return i.q+"× "+esc(i.n)}).join(", ")+'</div>'+
   (o.place?'<div class="sub">'+(o.type=="Delivery"?"Address: ":"Table: ")+esc(o.place)+'</div>':"")+
   (o.phone?'<div class="sub">Mobile: <a href="tel:+91'+esc(o.phone)+'">+91 '+esc(o.phone)+'</a></div>':"")+
   (o.notes?'<div class="sub">Notes: '+esc(o.notes)+'</div>':"")+
@@ -228,11 +229,12 @@ function vOrders(){
  $("view").innerHTML=h;
 }
 var SL={new:"New order",preparing:"Preparing",ready:"Ready",out:"Out for delivery",done:"Complete",cancelled:"CANCELLED"};
-function nextBtn(o){var f=o.type=="Delivery"?["new","preparing","ready","out","done"]:["new","preparing","ready","done"],i=f.indexOf(o._st);if(i<0||i>=f.length-1)return "";return '<button class="lnk" style="background:var(--ok);color:#fff;border-radius:8px" data-a="onext" data-s="'+f[i+1]+'" data-id="'+esc(o._id)+'">→ '+SL[f[i+1]]+'</button>'}
+function effSt(o){var s=o._st;if((s=="ready"||s=="out")&&o._ut&&Date.now()-o._ut>3600000)return "done";return s}
+function nextBtn(o){var f=o.type=="Delivery"?["new","preparing","ready","out"]:["new","preparing","ready"],i=f.indexOf(effSt(o));if(i<0||i>=f.length-1)return "";return '<button class="lnk" style="background:var(--ok);color:#fff;border-radius:8px" data-a="onext" data-s="'+f[i+1]+'" data-id="'+esc(o._id)+'">→ '+SL[f[i+1]]+'</button>'}
 function ordSet(id,st){
  var o=OR.list.filter(function(x){return x._id==id})[0];if(!o)return;
  token().then(function(t){return fetch(BASE+"/orders/"+id+"?updateMask.fieldPaths=status&key="+FB_KEY,{method:"PATCH",headers:{"Authorization":"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify({fields:{status:{stringValue:st}}})})})
- .then(function(r){if(!r.ok)throw 0;o._st=st;vOrders()}).catch(function(){alert("Could not update the order.")});
+ .then(function(r){if(!r.ok)throw 0;o._st=st;o._ut=Date.now();vOrders()}).catch(function(){alert("Could not update the order.")});
 }
 function ordDel(id){
  if(!confirm("Delete this order permanently?"))return;
@@ -326,6 +328,7 @@ $("view").addEventListener("change",function(e){
  var k=e.target.dataset.k;if(!k)return;
  if(k=="open")CFG.settings.open=e.target.checked;
  else if(k=="disc")CFG.discount.on=e.target.checked;
+ else if(k=="trk")CFG.settings.tracker=e.target.checked;
  else if(k.slice(0,2)=="a-"){var p=k.split("-");CFG.categories[p[1]].items[p[2]].out=!e.target.checked}
  mark();if(k=="open")view();
 });

@@ -153,7 +153,7 @@ var SOLD_OUT = [];
 // ===== Firebase (connects this page to the admin app) =====
 var FB_KEY="AIzaSyClhx1HgD2JdIJzPjPzT8ZJfrQrPCQ2pcI", FB_PROJECT="tawa-junction";
 // =========================================================
-var DELIV=0,MINORD=0,DISC={on:false,pct:0,min:0},CLOSED=false,CLOSEMSG="We are closed right now. Please check back later.";
+var TRACK=true,DELIV=0,MINORD=0,DISC={on:false,pct:0,min:0},CLOSED=false,CLOSEMSG="We are closed right now. Please check back later.";
 var BGS=["#FFE3A3","#FFD3BE","#DDEFC2","#FFD98F","#FFC9C0","#FFEBA0","#FFD0C8"];
 // each item: [name, description, price, "v"=veg / "n"=non-veg, "b"=bestseller]
 var MENU = [
@@ -211,7 +211,7 @@ function inWin(it,mn){var f=tmin(it.from),t=tmin(it.to);if(f==null||t==null)retu
 var DM={"Sabzi aur sauce wali tawa noodles": "Tawa-tossed noodles with veggies and sauce", "Anda aur masaledar sauce": "Egg with spicy masala sauce", "Juicy chicken ke saath": "With juicy chicken", "Extra teekhi schezwan": "Extra spicy schezwan", "Sabzi, pyaaz, mint chutney": "Veggies, onion, mint chutney", "Masala paneer, pyaaz, chutney": "Masala paneer, onion, chutney", "Double anda, pyaaz, sauce": "Double egg, onion, sauce", "Tikka chicken, laccha pyaaz": "Chicken tikka, sliced onion", "Garam bhaap wale, red chutney": "Hot steamed, red chutney", "Cheese slice ke saath": "With a cheese slice", "Cheese aur tomato sauce": "Cheese and tomato sauce", "Chicken tikka aur cheese": "Chicken tikka and cheese", "Teekha peri peri masala": "Spicy peri peri seasoning", "Butter aur lahsun": "Butter and garlic", "Thanda aur fizzy": "Cold and fizzy", "Ice cream ke saath": "With ice cream", "Adrak elaichi wali": "Ginger and cardamom", "Sweet ya salted": "Sweet or salted"};
 function applyConfig(c){
  var s=c.settings||{},d=c.discount||{},now=new Date(),mn=now.getHours()*60+now.getMinutes();
- NAME=s.name||NAME;WHATSAPP=String(s.whatsapp||WHATSAPP).replace(/\D/g,"");DELIV=+s.delivery||0;MINORD=+s.minOrder||0;CLOSED=s.open===false;if(s.closedMsg&&s.closedMsg!="Abhi band hai. Thodi der baad aana.")CLOSEMSG=s.closedMsg;
+ NAME=s.name||NAME;WHATSAPP=String(s.whatsapp||WHATSAPP).replace(/\D/g,"");DELIV=+s.delivery||0;MINORD=+s.minOrder||0;CLOSED=s.open===false;TRACK=s.tracker!==false;if(s.closedMsg&&s.closedMsg!="Abhi band hai. Thodi der baad aana.")CLOSEMSG=s.closedMsg;
  DISC={on:!!d.on,pct:+d.pct||0,min:+d.min||0};
  SOLD_OUT=[];
  MENU=(c.categories||[]).map(function(cat,i){return {cat:cat.name,art:ART[cat.art]?cat.art:"plate",bg:BGS[i%BGS.length],items:(cat.items||[]).filter(function(it){return inWin(it,mn)}).map(function(it){if(it.out)SOLD_OUT.push(it.name);return [it.name,DM[it.desc]||it.desc||"",+it.price||0,it.type=="n"?"n":"v",it.best?"b":"",it.offer||"",it.img||""]})}}).filter(function(c){return c.items.length});
@@ -235,16 +235,17 @@ function trkShow(s){
  var x='<button class="lnk" id="trkx" aria-label="Close">×</button>';
  if(s=="cancelled"){h='<div class="trk"><div class="row"><b>Order cancelled</b>'+x+'</div><div class="desc">Sorry about that. Please message the restaurant on WhatsApp for details.</div></div>'}
  else{var i=Math.max(0,f.indexOf(s));
-  h='<div class="trk"><div class="row"><b>Your order</b>'+x+'</div><div class="steps">'+f.map(function(k,j){return '<div class="stp'+(j<=i?" on":"")+'"><i></i>'+STL[k]+'</div>'}).join("")+'</div><div class="desc">'+(s=="new"?"The restaurant will confirm shortly. Don’t forget to send the WhatsApp message.":s=="done"?"Thank you! Please visit again.":"Status updates automatically.")+'</div></div>'}
+  h='<div class="trk"><div class="row"><b>Your order</b>'+x+'</div><div class="steps">'+f.map(function(k,j){return '<div class="stp'+(j<=i?" on":"")+'"><i></i>'+STL[k]+'</div>'}).join("")+'</div><div class="desc">'+(s=="new"?"The restaurant will confirm shortly. Don’t forget to send the WhatsApp message.":s=="preparing"?"Your order is being prepared.":s=="ready"?(trkL.type=="Dine-in"?"Your order is ready and will reach your table.":trkL.type=="Takeaway"?"Your order is ready for pickup.":"Your order is ready and will leave shortly."):s=="out"?"Your order is on the way.":s=="done"?"Thank you! Please visit again.":"Status updates automatically.")+'</div></div>'}
  $("trk").innerHTML=h;$("trk").hidden=false;
  $("trkx").onclick=function(){memLast=null;try{localStorage.removeItem("tj_last")}catch(e){}clearInterval(trkTm);$("trk").hidden=true};
 }
 function trkPoll(){
  if(!trkL||document.hidden)return;
- fetch("https://firestore.googleapis.com/v1/projects/"+FB_PROJECT+"/databases/(default)/documents/orders/"+trkL.id+"?key="+FB_KEY).then(function(r){return r.ok?r.json():null}).then(function(d){if(!d||!d.fields||!d.fields.status)return;var s=d.fields.status.stringValue;trkShow(s);if(s=="done"||s=="cancelled")clearInterval(trkTm)}).catch(function(){});
+ fetch("https://firestore.googleapis.com/v1/projects/"+FB_PROJECT+"/databases/(default)/documents/orders/"+trkL.id+"?key="+FB_KEY).then(function(r){return r.ok?r.json():null}).then(function(d){if(!d||!d.fields||!d.fields.status)return;var s=d.fields.status.stringValue;if((s=="ready"||s=="out")&&d.updateTime&&Date.now()-Date.parse(String(d.updateTime).replace(/(\.\d{3})\d*Z$/,"$1Z"))>3600000)s="done";trkShow(s);if(s=="done"||s=="cancelled")clearInterval(trkTm)}).catch(function(){});
 }
 function trkStart(){
  clearInterval(trkTm);trkL=null;
+ if(!TRACK){$("trk").hidden=true;return}
  try{trkL=JSON.parse(localStorage.getItem("tj_last")||"null")}catch(e){}
  if(!trkL)trkL=memLast;
  if(!trkL||FB_PROJECT.indexOf("PASTE")==0||Date.now()-trkL.t>6*3600000){$("trk").hidden=true;return}

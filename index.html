@@ -205,6 +205,7 @@ fries:S+'<g fill="#F7C948" stroke="#E0A81F"><rect x="26" y="14" width="8" height
 drink:S+'<path d="M60 6l-7 24" stroke="#E53935" stroke-width="4" stroke-linecap="round"/><rect x="24" y="26" width="52" height="9" rx="4" fill="#fff" stroke="#E0D4C0"/><path d="M28 35h44l-6 55H34z" fill="#8A2A14"/><path d="M31 56h38l-3 20H34z" fill="#fff" opacity=".85"/><rect x="38" y="42" width="9" height="9" rx="2" fill="#fff" opacity=".6" transform="rotate(12 42 46)"/></svg>'
 };
 var cart={};
+function slug(n){return String(n||"item").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"item"}
 function esc(x){return String(x).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function tmin(x){var p=(x||"").split(":");return p.length==2?(+p[0])*60+(+p[1]):null}
 function inWin(it,mn){var f=tmin(it.from),t=tmin(it.to);if(f==null||t==null)return true;return f<=t?(mn>=f&&mn<t):(mn>=f||mn<t)}
@@ -268,7 +269,7 @@ function render(){
   tabs+='<button class="tab" data-t="s'+ci+'">'+esc(c.cat)+"</button>";
   html+='<section id="s'+ci+'"><h2>'+esc(c.cat)+'</h2><div class="grid">';
   c.items.forEach(function(it,ii){
-   html+='<div class="item '+it[3]+(SOLD_OUT.indexOf(it[0])>-1?" out":"")+'"><div class="tile" style="background:radial-gradient(circle at 50% 55%,#fff8,transparent 70%),'+c.bg+'">'+(SOLD_OUT.indexOf(it[0])>-1?'<span class="soldb">Sold out</span>':(it[4]?'<span class="best">Bestseller</span>':''))+(it[5]?'<span class="offer">'+esc(it[5])+'</span>':'')+ART[c.art]+(it[6]?'<img class="ph" src="'+esc(it[6])+'" alt="" loading="lazy" onerror="this.remove()">':'')+'</div><div class="body"><div class="name"><span class="dot '+it[3]+'" title="'+(it[3]=="v"?"Veg":"Non-veg")+'"></span>'+esc(it[0])+'</div><div class="desc">'+esc(it[1])+'</div><div class="pr"><div class="price">'+rs(it[2])+'</div><div class="ctl" data-k="'+ci+"-"+ii+'"></div></div></div></div>';
+   html+='<div class="item '+it[3]+(SOLD_OUT.indexOf(it[0])>-1?" out":"")+'"><div class="tile" style="background:radial-gradient(circle at 50% 55%,#fff8,transparent 70%),'+c.bg+'">'+(SOLD_OUT.indexOf(it[0])>-1?'<span class="soldb">Sold out</span>':(it[4]?'<span class="best">Bestseller</span>':''))+(it[5]?'<span class="offer">'+esc(it[5])+'</span>':'')+ART[c.art]+'<img class="ph" src="'+esc(it[6]||"images/"+slug(it[0])+".jpg")+'" alt="" loading="lazy" onerror="this.remove()">'+'</div><div class="body"><div class="name"><span class="dot '+it[3]+'" title="'+(it[3]=="v"?"Veg":"Non-veg")+'"></span>'+esc(it[0])+'</div><div class="desc">'+esc(it[1])+'</div><div class="pr"><div class="price">'+rs(it[2])+'</div><div class="ctl" data-k="'+ci+"-"+ii+'"></div></div></div></div>';
   });
   html+="</div></section>";
  });

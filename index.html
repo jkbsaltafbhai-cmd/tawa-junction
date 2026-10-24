@@ -70,6 +70,15 @@ body.vegonly .item.n{display:none}
 .closedbar{background:#3A3A3A;color:#fff;text-align:center;padding:12px 16px;font-weight:700}
 .brow{display:flex;justify-content:space-between;padding:6px 0;font-size:15px}
 [hidden]{display:none!important}
+.tile img.ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.best,.offer,.soldb{z-index:2}
+.item.out .tile img.ph{filter:grayscale(1);opacity:.45}
+.trk{margin-top:14px;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh)}
+.steps{display:flex;gap:6px;margin:12px 0 8px}
+.stp{flex:1;text-align:center;font-size:12px;color:var(--muted)}
+.stp i{display:block;height:6px;border-radius:3px;background:var(--line);margin-bottom:6px}
+.stp.on{color:var(--ink);font-weight:700}.stp.on i{background:var(--veg)}
+.lnk{background:none;border:0;color:var(--muted);font-size:22px;cursor:pointer;line-height:1}
 .cl{display:flex;align-items:center;gap:10px}.cl svg{width:22px;height:22px;flex:none}
 .sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:20;display:none;align-items:flex-end}
 .sheet.open{display:flex}
@@ -101,23 +110,24 @@ input{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:12px;
 </head>
 <body>
 <header class="hero"><div class="wrap hw">
-<div><h1 id="hname">Tawa Junction</h1><p>Garma-garam fast food. Menu chuno, order seedha WhatsApp par bhejo.</p>
+<div><h1 id="hname">Tawa Junction</h1><p>Hot, fresh fast food. Pick your items and send your order straight to WhatsApp.</p>
 <div class="chips"><span>Fresh &amp; hot</span><span>Order on WhatsApp</span></div></div>
 <div class="hart" id="hart" aria-hidden="true"></div>
 </div></header>
 <div id="closed" class="closedbar" hidden></div>
+<div id="trk" class="wrap" style="padding:0 16px" hidden></div>
 <nav class="tabs wrap" id="tabs" aria-label="Menu categories"></nav>
-<main class="wrap" id="menu"><p class="desc" style="padding:24px 16px">Menu load ho raha hai…</p></main>
+<main class="wrap" id="menu"><p class="desc" style="padding:24px 16px">Loading menu…</p></main>
 <div class="bar"><button id="cartBtn" disabled><span class="cl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 11.4a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 7H6"/></svg><span id="cartCount">Cart is empty</span></span><span id="cartTotal"></span></button></div>
 
-<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Aapka order">
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Your order">
 <div class="panel">
-<button class="close" id="closeBtn" aria-label="Band karo">×</button>
-<h3>Aapka order</h3>
+<button class="close" id="closeBtn" aria-label="Close">×</button>
+<h3>Your order</h3>
 <div id="lines"></div>
 <div id="bill"></div><div class="total"><span>Total</span><span id="sum"></span></div>
-<label for="cname">Aapka naam</label>
-<input id="cname" autocomplete="name" placeholder="Naam likho">
+<label for="cname">Your name</label>
+<input id="cname" autocomplete="name" placeholder="Enter your name">
 <div id="phoneWrap" style="display:none"><label for="cphone">Mobile number</label>
 <input id="cphone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="14" placeholder="10 digit mobile number"></div>
 <label>Order type</label>
@@ -126,61 +136,61 @@ input{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:12px;
 <label><input type="radio" name="otype" value="Takeaway"><span>Takeaway</span></label>
 <label><input type="radio" name="otype" value="Delivery"><span>Delivery</span></label>
 </div>
-<div id="extraWrap"><label for="extra" id="extraLbl">Table number</label><input id="extra" placeholder="Jaise: 4"></div>
+<div id="extraWrap"><label for="extra" id="extraLbl">Table number</label><input id="extra" placeholder="e.g. 4"></div>
 <label for="notes">Notes (optional)</label>
-<input id="notes" maxlength="200" placeholder="Jaise: kam teekha, bina pyaaz">
+<input id="notes" maxlength="200" placeholder="e.g. less spicy, no onion">
 <div class="err" id="err" role="alert"></div>
-<button class="wa" id="sendBtn">WhatsApp par order bhejo</button>
-<div id="fb" style="display:none"><p class="desc">WhatsApp nahi khula? Neeche ka message copy karke restaurant ke WhatsApp number par bhej do.</p><textarea id="msgBox" readonly rows="7" style="width:100%;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:14px 'DM Sans',sans-serif"></textarea><button class="wa" id="copyBtn" style="background:var(--ink);color:var(--bg);margin-top:8px">Message copy karo</button></div>
+<button class="wa" id="sendBtn">Send order on WhatsApp</button>
+<div id="fb" style="display:none"><p class="desc">WhatsApp didn’t open? Copy the message below and send it to the restaurant’s WhatsApp number.</p><textarea id="msgBox" readonly rows="7" style="width:100%;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:14px 'DM Sans',sans-serif"></textarea><button class="wa" id="copyBtn" style="background:var(--ink);color:var(--bg);margin-top:8px">Copy message</button></div>
 </div></div>
 
 <script>
-// ===== Yahan apna data badlo =====
+// ===== Default menu data (used if Firebase is unavailable) =====
 var WHATSAPP = "917091328594";
 var NAME = "Tawa Junction";
-// Jo item khatam ho gaya ho, uska naam yahan likho. Jaise: var SOLD_OUT = ["Egg Roll","Cold Coffee"];
+// Names of sold-out items go here. Example: var SOLD_OUT = ["Egg Roll","Cold Coffee"];
 var SOLD_OUT = [];
-// ===== Firebase (admin app se connect karne ke liye) =====
+// ===== Firebase (connects this page to the admin app) =====
 var FB_KEY="AIzaSyClhx1HgD2JdIJzPjPzT8ZJfrQrPCQ2pcI", FB_PROJECT="tawa-junction";
 // =========================================================
-var DELIV=0,MINORD=0,DISC={on:false,pct:0,min:0},CLOSED=false,CLOSEMSG="Abhi band hai. Thodi der baad aana.";
+var DELIV=0,MINORD=0,DISC={on:false,pct:0,min:0},CLOSED=false,CLOSEMSG="We are closed right now. Please check back later.";
 var BGS=["#FFE3A3","#FFD3BE","#DDEFC2","#FFD98F","#FFC9C0","#FFEBA0","#FFD0C8"];
-// har item: [naam, description, price, "v"=veg / "n"=non-veg, "b"=bestseller]
+// each item: [name, description, price, "v"=veg / "n"=non-veg, "b"=bestseller]
 var MENU = [
 {cat:"Chowmein",art:"chow",bg:"#FFE3A3",items:[
-["Veg Chowmein","Sabzi aur sauce wali tawa noodles",70,"v"],
-["Egg Chowmein","Anda aur masaledar sauce",90,"n","b"],
-["Chicken Chowmein","Juicy chicken ke saath",110,"n"],
-["Schezwan Chowmein","Extra teekhi schezwan",100,"v"]]},
+["Veg Chowmein","Tawa-tossed noodles with veggies and sauce",70,"v"],
+["Egg Chowmein","Egg with spicy masala sauce",90,"n","b"],
+["Chicken Chowmein","With juicy chicken",110,"n"],
+["Schezwan Chowmein","Extra spicy schezwan",100,"v"]]},
 {cat:"Rolls",art:"roll",bg:"#FFD3BE",items:[
-["Veg Roll","Sabzi, pyaaz, mint chutney",50,"v"],
-["Paneer Roll","Masala paneer, pyaaz, chutney",80,"v"],
-["Egg Roll","Double anda, pyaaz, sauce",60,"n","b"],
-["Chicken Roll","Tikka chicken, laccha pyaaz",90,"n"]]},
+["Veg Roll","Veggies, onion, mint chutney",50,"v"],
+["Paneer Roll","Masala paneer, onion, chutney",80,"v"],
+["Egg Roll","Double egg, onion, sauce",60,"n","b"],
+["Chicken Roll","Chicken tikka, sliced onion",90,"n"]]},
 {cat:"Momos",art:"momo",bg:"#DDEFC2",items:[
-["Veg Steamed Momos (6)","Garam bhaap wale, red chutney",60,"v"],
+["Veg Steamed Momos (6)","Hot steamed, red chutney",60,"v"],
 ["Veg Fried Momos (6)","Crispy fried",70,"v","b"],
 ["Chicken Momos (6)","Steamed, juicy filling",80,"n"],
 ["Peri Peri Momos (6)","Peri peri masala tossed",90,"v"]]},
 {cat:"Burger",art:"burger",bg:"#FFD98F",items:[
 ["Aloo Tikki Burger","Classic tikki, mayo, onion",50,"v","b"],
-["Veg Cheese Burger","Cheese slice ke saath",70,"v"],
+["Veg Cheese Burger","With a cheese slice",70,"v"],
 ["Chicken Burger","Crispy chicken patty",100,"n"]]},
 {cat:"Pizza",art:"pizza",bg:"#FFC9C0",items:[
-["Margherita (7\")","Cheese aur tomato sauce",120,"v"],
+["Margherita (7\")","Cheese and tomato sauce",120,"v"],
 ["Veg Loaded (7\")","Capsicum, corn, onion, olives",160,"v"],
 ["Paneer Tikka (7\")","Tandoori paneer topping",180,"v","b"],
-["Chicken Tikka (7\")","Chicken tikka aur cheese",200,"n"]]},
+["Chicken Tikka (7\")","Chicken tikka and cheese",200,"n"]]},
 {cat:"Fries & Sides",art:"fries",bg:"#FFEBA0",items:[
 ["French Fries","Salted, crispy",60,"v"],
-["Peri Peri Fries","Teekha peri peri masala",80,"v","b"],
+["Peri Peri Fries","Spicy peri peri seasoning",80,"v","b"],
 ["Veg Sandwich","Grilled, green chutney",50,"v"],
-["Garlic Bread (4)","Butter aur lahsun",90,"v"]]},
+["Garlic Bread (4)","Butter and garlic",90,"v"]]},
 {cat:"Drinks",art:"drink",bg:"#FFD0C8",items:[
-["Cold Drink (300 ml)","Thanda aur fizzy",25,"v"],
-["Cold Coffee","Ice cream ke saath",70,"v","b"],
-["Masala Chai","Adrak elaichi wali",15,"v"],
-["Nimbu Soda","Sweet ya salted",30,"v"]]}
+["Cold Drink (300 ml)","Cold and fizzy",25,"v"],
+["Cold Coffee","With ice cream",70,"v","b"],
+["Masala Chai","Ginger and cardamom",15,"v"],
+["Nimbu Soda","Sweet or salted",30,"v"]]}
 ];
 // =================================
 var S='<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">';
@@ -198,14 +208,50 @@ var cart={};
 function esc(x){return String(x).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function tmin(x){var p=(x||"").split(":");return p.length==2?(+p[0])*60+(+p[1]):null}
 function inWin(it,mn){var f=tmin(it.from),t=tmin(it.to);if(f==null||t==null)return true;return f<=t?(mn>=f&&mn<t):(mn>=f||mn<t)}
+var DM={"Sabzi aur sauce wali tawa noodles": "Tawa-tossed noodles with veggies and sauce", "Anda aur masaledar sauce": "Egg with spicy masala sauce", "Juicy chicken ke saath": "With juicy chicken", "Extra teekhi schezwan": "Extra spicy schezwan", "Sabzi, pyaaz, mint chutney": "Veggies, onion, mint chutney", "Masala paneer, pyaaz, chutney": "Masala paneer, onion, chutney", "Double anda, pyaaz, sauce": "Double egg, onion, sauce", "Tikka chicken, laccha pyaaz": "Chicken tikka, sliced onion", "Garam bhaap wale, red chutney": "Hot steamed, red chutney", "Cheese slice ke saath": "With a cheese slice", "Cheese aur tomato sauce": "Cheese and tomato sauce", "Chicken tikka aur cheese": "Chicken tikka and cheese", "Teekha peri peri masala": "Spicy peri peri seasoning", "Butter aur lahsun": "Butter and garlic", "Thanda aur fizzy": "Cold and fizzy", "Ice cream ke saath": "With ice cream", "Adrak elaichi wali": "Ginger and cardamom", "Sweet ya salted": "Sweet or salted"};
 function applyConfig(c){
  var s=c.settings||{},d=c.discount||{},now=new Date(),mn=now.getHours()*60+now.getMinutes();
- NAME=s.name||NAME;WHATSAPP=String(s.whatsapp||WHATSAPP).replace(/\D/g,"");DELIV=+s.delivery||0;MINORD=+s.minOrder||0;CLOSED=s.open===false;if(s.closedMsg)CLOSEMSG=s.closedMsg;
+ NAME=s.name||NAME;WHATSAPP=String(s.whatsapp||WHATSAPP).replace(/\D/g,"");DELIV=+s.delivery||0;MINORD=+s.minOrder||0;CLOSED=s.open===false;if(s.closedMsg&&s.closedMsg!="Abhi band hai. Thodi der baad aana.")CLOSEMSG=s.closedMsg;
  DISC={on:!!d.on,pct:+d.pct||0,min:+d.min||0};
  SOLD_OUT=[];
- MENU=(c.categories||[]).map(function(cat,i){return {cat:cat.name,art:ART[cat.art]?cat.art:"plate",bg:BGS[i%BGS.length],items:(cat.items||[]).filter(function(it){return inWin(it,mn)}).map(function(it){if(it.out)SOLD_OUT.push(it.name);return [it.name,it.desc||"",+it.price||0,it.type=="n"?"n":"v",it.best?"b":"",it.offer||""]})}}).filter(function(c){return c.items.length});
+ MENU=(c.categories||[]).map(function(cat,i){return {cat:cat.name,art:ART[cat.art]?cat.art:"plate",bg:BGS[i%BGS.length],items:(cat.items||[]).filter(function(it){return inWin(it,mn)}).map(function(it){if(it.out)SOLD_OUT.push(it.name);return [it.name,DM[it.desc]||it.desc||"",+it.price||0,it.type=="n"?"n":"v",it.best?"b":"",it.offer||"",it.img||""]})}}).filter(function(c){return c.items.length});
  $("hname").textContent=NAME;document.title=NAME+" – Menu";
 }
+var lastSig="",lastT=0;
+function rid(){var a=new Uint8Array(16);(window.crypto||window.msCrypto).getRandomValues(a);return "o"+Array.prototype.map.call(a,function(x){return ("0"+x.toString(16)).slice(-2)}).join("")}
+function saveOrder(name,v,ex,ph,nt,c,m){
+ if(FB_PROJECT.indexOf("PASTE")==0)return;
+ var now=Date.now();if(m==lastSig&&now-lastT<600000)return;lastSig=m;lastT=now;
+ var items=Object.keys(cart).map(function(k){var f=find(k);return {n:f.n,q:cart[k],p:f.p}});
+ var o={name:name,type:v,phone:v=="Delivery"?ph:"",place:v=="Takeaway"?"":ex,notes:nt,items:items,sub:c.sub,disc:c.disc,del:c.del,total:c.total};
+ var id=rid();
+ try{fetch("https://firestore.googleapis.com/v1/projects/"+FB_PROJECT+"/databases/(default)/documents/orders?documentId="+id+"&key="+FB_KEY,{method:"POST",keepalive:true,headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:{ts:{integerValue:String(now)},status:{stringValue:"new"},json:{stringValue:JSON.stringify(o)}}})}).then(function(r){if(r.ok)trkSet(id,v)}).catch(function(){})}catch(e){}
+}
+/* ---- order status tracker ---- */
+var STL={new:"Order placed",preparing:"Preparing",ready:"Ready",out:"Out for delivery",done:"Complete"};
+var trkTm=null,trkL=null,memLast=null;
+function trkShow(s){
+ var f=trkL.type=="Delivery"?["new","preparing","ready","out","done"]:["new","preparing","ready","done"],h;
+ var x='<button class="lnk" id="trkx" aria-label="Close">×</button>';
+ if(s=="cancelled"){h='<div class="trk"><div class="row"><b>Order cancelled</b>'+x+'</div><div class="desc">Sorry about that. Please message the restaurant on WhatsApp for details.</div></div>'}
+ else{var i=Math.max(0,f.indexOf(s));
+  h='<div class="trk"><div class="row"><b>Your order</b>'+x+'</div><div class="steps">'+f.map(function(k,j){return '<div class="stp'+(j<=i?" on":"")+'"><i></i>'+STL[k]+'</div>'}).join("")+'</div><div class="desc">'+(s=="new"?"The restaurant will confirm shortly. Don’t forget to send the WhatsApp message.":s=="done"?"Thank you! Please visit again.":"Status updates automatically.")+'</div></div>'}
+ $("trk").innerHTML=h;$("trk").hidden=false;
+ $("trkx").onclick=function(){memLast=null;try{localStorage.removeItem("tj_last")}catch(e){}clearInterval(trkTm);$("trk").hidden=true};
+}
+function trkPoll(){
+ if(!trkL||document.hidden)return;
+ fetch("https://firestore.googleapis.com/v1/projects/"+FB_PROJECT+"/databases/(default)/documents/orders/"+trkL.id+"?key="+FB_KEY).then(function(r){return r.ok?r.json():null}).then(function(d){if(!d||!d.fields||!d.fields.status)return;var s=d.fields.status.stringValue;trkShow(s);if(s=="done"||s=="cancelled")clearInterval(trkTm)}).catch(function(){});
+}
+function trkStart(){
+ clearInterval(trkTm);trkL=null;
+ try{trkL=JSON.parse(localStorage.getItem("tj_last")||"null")}catch(e){}
+ if(!trkL)trkL=memLast;
+ if(!trkL||FB_PROJECT.indexOf("PASTE")==0||Date.now()-trkL.t>6*3600000){$("trk").hidden=true;return}
+ trkPoll();trkTm=setInterval(trkPoll,20000);
+}
+function trkSet(id,type){memLast={id:id,t:Date.now(),type:type};try{localStorage.setItem("tj_last",JSON.stringify({id:id,t:Date.now(),type:type}))}catch(e){}trkStart()}
+document.addEventListener("visibilitychange",function(){if(!document.hidden)trkPoll()});
 function loadCfg(){
  if(FB_PROJECT.indexOf("PASTE")==0)return Promise.resolve(null);
  var ac=new AbortController(),tm=setTimeout(function(){ac.abort()},7000);
@@ -221,7 +267,7 @@ function render(){
   tabs+='<button class="tab" data-t="s'+ci+'">'+esc(c.cat)+"</button>";
   html+='<section id="s'+ci+'"><h2>'+esc(c.cat)+'</h2><div class="grid">';
   c.items.forEach(function(it,ii){
-   html+='<div class="item '+it[3]+(SOLD_OUT.indexOf(it[0])>-1?" out":"")+'"><div class="tile" style="background:radial-gradient(circle at 50% 55%,#fff8,transparent 70%),'+c.bg+'">'+(SOLD_OUT.indexOf(it[0])>-1?'<span class="soldb">Sold out</span>':(it[4]?'<span class="best">Bestseller</span>':''))+(it[5]?'<span class="offer">'+esc(it[5])+'</span>':'')+ART[c.art]+'</div><div class="body"><div class="name"><span class="dot '+it[3]+'" title="'+(it[3]=="v"?"Veg":"Non-veg")+'"></span>'+esc(it[0])+'</div><div class="desc">'+esc(it[1])+'</div><div class="pr"><div class="price">'+rs(it[2])+'</div><div class="ctl" data-k="'+ci+"-"+ii+'"></div></div></div></div>';
+   html+='<div class="item '+it[3]+(SOLD_OUT.indexOf(it[0])>-1?" out":"")+'"><div class="tile" style="background:radial-gradient(circle at 50% 55%,#fff8,transparent 70%),'+c.bg+'">'+(SOLD_OUT.indexOf(it[0])>-1?'<span class="soldb">Sold out</span>':(it[4]?'<span class="best">Bestseller</span>':''))+(it[5]?'<span class="offer">'+esc(it[5])+'</span>':'')+ART[c.art]+(it[6]?'<img class="ph" src="'+esc(it[6])+'" alt="" loading="lazy" onerror="this.remove()">':'')+'</div><div class="body"><div class="name"><span class="dot '+it[3]+'" title="'+(it[3]=="v"?"Veg":"Non-veg")+'"></span>'+esc(it[0])+'</div><div class="desc">'+esc(it[1])+'</div><div class="pr"><div class="price">'+rs(it[2])+'</div><div class="ctl" data-k="'+ci+"-"+ii+'"></div></div></div></div>';
   });
   html+="</div></section>";
  });
@@ -234,7 +280,7 @@ function ctl(k){
  if(CLOSED)return '<button class="add" disabled>Closed</button>';
  if(SOLD_OUT.indexOf(find(k).n)>-1)return '<button class="add" disabled>Sold out</button>';
  var q=cart[k]||0;
- return q?'<div class="qty"><button data-a="-" data-k="'+k+'" aria-label="Kam karo">−</button><span>'+q+'</span><button data-a="+" data-k="'+k+'" aria-label="Badhao">+</button></div>':'<button class="add" data-a="+" data-k="'+k+'">Add</button>';
+ return q?'<div class="qty"><button data-a="-" data-k="'+k+'" aria-label="Decrease">−</button><span>'+q+'</span><button data-a="+" data-k="'+k+'" aria-label="Increase">+</button></div>':'<button class="add" data-a="+" data-k="'+k+'">Add</button>';
 }
 function draw(){
  document.querySelectorAll(".ctl").forEach(function(e){e.innerHTML=ctl(e.dataset.k)});
@@ -246,11 +292,11 @@ function draw(){
  var c=calc(t,otype()),bh=brow("Subtotal",rs(c.sub));
  if(c.disc)bh+=brow("Discount ("+DISC.pct+"%)","−"+rs(c.disc));
  if(c.del)bh+=brow("Delivery charge",rs(c.del));
- if(n&&DISC.on&&t<DISC.min)bh+='<div class="desc">'+rs(DISC.min-t)+' ka aur order karo, '+DISC.pct+'% discount milega.</div>';
- if(n&&t<MINORD)bh+='<div class="desc">Minimum order '+rs(MINORD)+' ka hona chahiye.</div>';
+ if(n&&DISC.on&&t<DISC.min)bh+='<div class="desc">Add '+rs(DISC.min-t)+' more to get '+DISC.pct+'% off.</div>';
+ if(n&&t<MINORD)bh+='<div class="desc">Minimum order is '+rs(MINORD)+'.</div>';
  $("bill").innerHTML=bh;$("sum").textContent=rs(c.total);
  var l="";
- Object.keys(cart).forEach(function(k){var f=find(k);l+='<div class="row"><div>'+esc(f.n)+'<div class="desc">'+rs(f.p)+' × '+cart[k]+'</div></div><div class="qty"><button data-a="-" data-k="'+k+'" aria-label="Kam karo">−</button><span>'+cart[k]+'</span><button data-a="+" data-k="'+k+'" aria-label="Badhao">+</button></div></div>'});
+ Object.keys(cart).forEach(function(k){var f=find(k);l+='<div class="row"><div>'+esc(f.n)+'<div class="desc">'+rs(f.p)+' × '+cart[k]+'</div></div><div class="qty"><button data-a="-" data-k="'+k+'" aria-label="Decrease">−</button><span>'+cart[k]+'</span><button data-a="+" data-k="'+k+'" aria-label="Increase">+</button></div></div>'});
  $("lines").innerHTML=l;
  if(!n)$("sheet").classList.remove("open");
 }
@@ -295,30 +341,31 @@ document.querySelectorAll('input[name="otype"]').forEach(function(r){r.onchange=
  var v=otype();
  $("extraWrap").style.display=v=="Takeaway"?"none":"block";
  $("phoneWrap").style.display=v=="Delivery"?"block":"none";
- $("extraLbl").textContent=v=="Delivery"?"Poora address":"Table number";
- $("extra").placeholder=v=="Delivery"?"Ghar/dukaan ka address, landmark":"Jaise: 4";
+ $("extraLbl").textContent=v=="Delivery"?"Full address":"Table number";
+ $("extra").placeholder=v=="Delivery"?"Full address and landmark":"e.g. 4";
  draw();
 }});
 $("sendBtn").onclick=function(){
  var name=$("cname").value.trim(),v=otype(),ex=$("extra").value.trim();
- if(!name){$("err").textContent="Pehle apna naam likho.";return}
+ if(!name){$("err").textContent="Please enter your name.";return}
  var ph=$("cphone").value.replace(/\D/g,"").replace(/^(91|0)(?=\d{10}$)/,"");
- if(v=="Delivery"&&!/^[6-9]\d{9}$/.test(ph)){$("err").textContent="Sahi 10 digit mobile number likho.";return}
- if(v=="Delivery"&&!ex){$("err").textContent="Delivery ke liye address likho.";return}
+ if(v=="Delivery"&&!/^[6-9]\d{9}$/.test(ph)){$("err").textContent="Please enter a valid 10-digit mobile number.";return}
+ if(v=="Delivery"&&!ex){$("err").textContent="Please enter your delivery address.";return}
  $("err").textContent="";
- var t=0,m="*Naya order – "+NAME+"*\n\n";
+ var t=0,m="*New order – "+NAME+"*\n\n";
  Object.keys(cart).forEach(function(k){var f=find(k),a=f.p*cart[k];t+=a;m+="• "+f.n+" × "+cart[k]+" = "+rs(a)+"\n"});
- if(t<MINORD){$("err").textContent="Minimum order "+rs(MINORD)+" ka hona chahiye.";return}
- var c=calc(t,v);m+="\nSubtotal: "+rs(c.sub)+(c.disc?"\nDiscount: −"+rs(c.disc):"")+(c.del?"\nDelivery charge: "+rs(c.del):"")+"\n*Total: "+rs(c.total)+"*\n\nNaam: "+name+"\nType: "+v;
+ if(t<MINORD){$("err").textContent="Minimum order is "+rs(MINORD)+".";return}
+ var c=calc(t,v);m+="\nSubtotal: "+rs(c.sub)+(c.disc?"\nDiscount: −"+rs(c.disc):"")+(c.del?"\nDelivery charge: "+rs(c.del):"")+"\n*Total: "+rs(c.total)+"*\n\nName: "+name+"\nType: "+v;
  if(v=="Dine-in"&&ex)m+="\nTable: "+ex;
  if(v=="Delivery")m+="\nMobile: +91 "+ph+"\nAddress: "+ex;
  var nt=$("notes").value.trim();if(nt)m+="\nNotes: "+nt;
+ saveOrder(name,v,ex,ph,nt,c,m);
  var url="https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(m);
  $("msgBox").value=m;$("fb").style.display="block";
  var a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener noreferrer";document.body.appendChild(a);a.click();a.remove();
 };
-$("copyBtn").onclick=function(){var b=$("msgBox");b.select();try{if(navigator.clipboard){navigator.clipboard.writeText(b.value)}else{document.execCommand("copy")}$("copyBtn").textContent="Copy ho gaya ✓"}catch(e){try{document.execCommand("copy");$("copyBtn").textContent="Copy ho gaya ✓"}catch(x){}}};
-loadCfg().then(function(c){if(c)applyConfig(c);render();window.dispatchEvent(new Event("scroll"))});
+$("copyBtn").onclick=function(){var b=$("msgBox");b.select();try{if(navigator.clipboard){navigator.clipboard.writeText(b.value)}else{document.execCommand("copy")}$("copyBtn").textContent="Copied ✓"}catch(e){try{document.execCommand("copy");$("copyBtn").textContent="Copied ✓"}catch(x){}}};
+loadCfg().then(function(c){if(c)applyConfig(c);render();window.dispatchEvent(new Event("scroll"));trkStart()});
 window.addEventListener("scroll",function(){
  var cur=0;MENU.forEach(function(c,i){var s=$("s"+i);if(s&&s.offsetParent&&s.getBoundingClientRect().top<120)cur=i});
  document.querySelectorAll(".tab").forEach(function(b,i){b.setAttribute("aria-current",i==cur?"true":"false")});

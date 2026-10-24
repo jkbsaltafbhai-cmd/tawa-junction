@@ -45,6 +45,15 @@ label{display:block;font-weight:500;font-size:14px;margin:12px 0 4px}
 .sw i::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s}
 .sw input:checked+i{background:var(--ok)}.sw input:checked+i::after{transform:translateX(20px)}
 .sw input:focus-visible+i,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px}
+.chip{flex:none;border:1.5px solid var(--ln);background:var(--sf);color:var(--ink);border-radius:999px;padding:8px 16px;font:700 14px "DM Sans",sans-serif;cursor:pointer}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.stat{background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:12px 6px;text-align:center}
+.stat b{display:block;font:800 20px "Bricolage Grotesque",Georgia,serif}.stat span{font-size:12px;color:var(--mu)}
+.tb{height:8px;border-radius:4px;background:var(--red);margin-top:4px}
+.ord{background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:12px;margin:10px 0}
+.ord.n{border-left:4px solid var(--red)}.ord.x{opacity:.55}.ord.x b{text-decoration:line-through}
 nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--sf);border-top:1px solid var(--ln);display:flex;padding-bottom:env(safe-area-inset-bottom,0)}
 nav button{flex:1;background:none;border:0;padding:14px 4px;color:var(--mu);font:700 14px "DM Sans",sans-serif;cursor:pointer}
 nav button[aria-current="true"]{color:var(--red);box-shadow:inset 0 3px var(--red)}
@@ -59,7 +68,7 @@ nav button[aria-current="true"]{color:var(--red);box-shadow:inset 0 3px var(--re
 </head>
 <body>
 <div id="login">
-<h1>Tawa Junction Admin</h1><p class="sub">Sirf restaurant owner ke liye.</p>
+<h1>Tawa Junction Admin</h1><p class="sub">For the restaurant owner only.</p>
 <label for="em">Email</label><input id="em" type="email" autocomplete="username">
 <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
 <div class="err" id="lerr" role="alert"></div>
@@ -69,30 +78,34 @@ nav button[aria-current="true"]{color:var(--red);box-shadow:inset 0 3px var(--re
 <div id="app" hidden>
 <header><div class="wrap"><h1 style="font-size:20px">Admin</h1><span id="status"></span><a id="cu" class="lnk" target="_blank" rel="noopener" hidden>Customer menu ↗</a><button class="lnk" id="out">Logout</button></div></header>
 <main class="wrap" id="view"></main>
-<div id="savebar" hidden><div class="wrap"><span class="sub" style="flex:1">Badlav abhi save nahi hue.</span><button class="btn" id="save" style="width:auto;padding:12px 18px">Save aur live karo</button></div></div>
-<nav id="nav"><button data-t="menu">Menu</button><button data-t="prices">Prices</button><button data-t="offers">Offers</button><button data-t="settings">Settings</button></nav>
+<div id="savebar" hidden><div class="wrap"><span class="sub" style="flex:1">You have unsaved changes.</span><button class="btn" id="save" style="width:auto;padding:12px 18px">Save &amp; publish</button></div></div>
+<nav id="nav"><button data-t="orders">Orders</button><button data-t="menu">Menu</button><button data-t="prices">Prices</button><button data-t="offers">Offers</button><button data-t="settings">Settings</button></nav>
 <div id="modal" hidden></div>
 </div>
 
 <script>
-// ===== Pehle yeh 3 cheezein bharo (Firebase se milengi) =====
+// ===== Fill these in first (from Firebase) =====
 var FB_KEY="AIzaSyClhx1HgD2JdIJzPjPzT8ZJfrQrPCQ2pcI", FB_PROJECT="tawa-junction";
-var CUSTOMER_URL=""; // apni customer website ka link (optional)
+var CUSTOMER_URL=""; // link to your customer website (optional)
 // ============================================================
 var DOC="https://firestore.googleapis.com/v1/projects/"+FB_PROJECT+"/databases/(default)/documents/config/menu";
 var ICONS=[["chow","Noodles"],["roll","Roll"],["momo","Momos"],["burger","Burger"],["pizza","Pizza"],["fries","Fries / Sides"],["drink","Drinks"],["plate","Plate (general)"]];
-var D=[["Chowmein","chow",[["Veg Chowmein","Sabzi aur sauce wali tawa noodles",70,"v"],["Egg Chowmein","Anda aur masaledar sauce",90,"n","b"],["Chicken Chowmein","Juicy chicken ke saath",110,"n"],["Schezwan Chowmein","Extra teekhi schezwan",100,"v"]]],
-["Rolls","roll",[["Veg Roll","Sabzi, pyaaz, mint chutney",50,"v"],["Paneer Roll","Masala paneer, pyaaz, chutney",80,"v"],["Egg Roll","Double anda, pyaaz, sauce",60,"n","b"],["Chicken Roll","Tikka chicken, laccha pyaaz",90,"n"]]],
-["Momos","momo",[["Veg Steamed Momos (6)","Garam bhaap wale, red chutney",60,"v"],["Veg Fried Momos (6)","Crispy fried",70,"v","b"],["Chicken Momos (6)","Steamed, juicy filling",80,"n"],["Peri Peri Momos (6)","Peri peri masala tossed",90,"v"]]],
-["Burger","burger",[["Aloo Tikki Burger","Classic tikki, mayo, onion",50,"v","b"],["Veg Cheese Burger","Cheese slice ke saath",70,"v"],["Chicken Burger","Crispy chicken patty",100,"n"]]],
-["Pizza","pizza",[["Margherita (7\")","Cheese aur tomato sauce",120,"v"],["Veg Loaded (7\")","Capsicum, corn, onion, olives",160,"v"],["Paneer Tikka (7\")","Tandoori paneer topping",180,"v","b"],["Chicken Tikka (7\")","Chicken tikka aur cheese",200,"n"]]],
-["Fries & Sides","fries",[["French Fries","Salted, crispy",60,"v"],["Peri Peri Fries","Teekha peri peri masala",80,"v","b"],["Veg Sandwich","Grilled, green chutney",50,"v"],["Garlic Bread (4)","Butter aur lahsun",90,"v"]]],
-["Drinks","drink",[["Cold Drink (300 ml)","Thanda aur fizzy",25,"v"],["Cold Coffee","Ice cream ke saath",70,"v","b"],["Masala Chai","Adrak elaichi wali",15,"v"],["Nimbu Soda","Sweet ya salted",30,"v"]]]];
-var CFG,AUTH=null,TAB="menu",dirty=false;
+var D=[["Chowmein","chow",[["Veg Chowmein","Tawa-tossed noodles with veggies and sauce",70,"v"],["Egg Chowmein","Egg with spicy masala sauce",90,"n","b"],["Chicken Chowmein","With juicy chicken",110,"n"],["Schezwan Chowmein","Extra spicy schezwan",100,"v"]]],
+["Rolls","roll",[["Veg Roll","Veggies, onion, mint chutney",50,"v"],["Paneer Roll","Masala paneer, onion, chutney",80,"v"],["Egg Roll","Double egg, onion, sauce",60,"n","b"],["Chicken Roll","Chicken tikka, sliced onion",90,"n"]]],
+["Momos","momo",[["Veg Steamed Momos (6)","Hot steamed, red chutney",60,"v"],["Veg Fried Momos (6)","Crispy fried",70,"v","b"],["Chicken Momos (6)","Steamed, juicy filling",80,"n"],["Peri Peri Momos (6)","Peri peri masala tossed",90,"v"]]],
+["Burger","burger",[["Aloo Tikki Burger","Classic tikki, mayo, onion",50,"v","b"],["Veg Cheese Burger","With a cheese slice",70,"v"],["Chicken Burger","Crispy chicken patty",100,"n"]]],
+["Pizza","pizza",[["Margherita (7\")","Cheese and tomato sauce",120,"v"],["Veg Loaded (7\")","Capsicum, corn, onion, olives",160,"v"],["Paneer Tikka (7\")","Tandoori paneer topping",180,"v","b"],["Chicken Tikka (7\")","Chicken tikka and cheese",200,"n"]]],
+["Fries & Sides","fries",[["French Fries","Salted, crispy",60,"v"],["Peri Peri Fries","Spicy peri peri seasoning",80,"v","b"],["Veg Sandwich","Grilled, green chutney",50,"v"],["Garlic Bread (4)","Butter and garlic",90,"v"]]],
+["Drinks","drink",[["Cold Drink (300 ml)","Cold and fizzy",25,"v"],["Cold Coffee","With ice cream",70,"v","b"],["Masala Chai","Ginger and cardamom",15,"v"],["Nimbu Soda","Sweet or salted",30,"v"]]]];
+var CFG,AUTH=null,TAB="orders",dirty=false;
+var BASE="https://firestore.googleapis.com/v1/projects/"+FB_PROJECT+"/databases/(default)/documents";
+var OR={range:"today",list:[],loading:false,err:""};
 var $=function(i){return document.getElementById(i)};
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function uid(){return "i"+Math.random().toString(36).slice(2,9)}
-function defaults(){return {settings:{name:"Tawa Junction",whatsapp:"917091328594",delivery:0,minOrder:0,open:true,closedMsg:"Abhi band hai. Thodi der baad aana."},discount:{on:false,pct:10,min:200},
+var DM={"Sabzi aur sauce wali tawa noodles": "Tawa-tossed noodles with veggies and sauce", "Anda aur masaledar sauce": "Egg with spicy masala sauce", "Juicy chicken ke saath": "With juicy chicken", "Extra teekhi schezwan": "Extra spicy schezwan", "Sabzi, pyaaz, mint chutney": "Veggies, onion, mint chutney", "Masala paneer, pyaaz, chutney": "Masala paneer, onion, chutney", "Double anda, pyaaz, sauce": "Double egg, onion, sauce", "Tikka chicken, laccha pyaaz": "Chicken tikka, sliced onion", "Garam bhaap wale, red chutney": "Hot steamed, red chutney", "Cheese slice ke saath": "With a cheese slice", "Cheese aur tomato sauce": "Cheese and tomato sauce", "Chicken tikka aur cheese": "Chicken tikka and cheese", "Teekha peri peri masala": "Spicy peri peri seasoning", "Butter aur lahsun": "Butter and garlic", "Thanda aur fizzy": "Cold and fizzy", "Ice cream ke saath": "With ice cream", "Adrak elaichi wali": "Ginger and cardamom", "Sweet ya salted": "Sweet or salted"};
+function migrate(c){var ch=false;c.categories.forEach(function(g){g.items.forEach(function(it){if(DM[it.desc]){it.desc=DM[it.desc];ch=true}})});if(c.settings&&c.settings.closedMsg=="Abhi band hai. Thodi der baad aana."){c.settings.closedMsg="We are closed right now. Please check back later.";ch=true}return ch}
+function defaults(){return {settings:{name:"Tawa Junction",whatsapp:"917091328594",delivery:0,minOrder:0,open:true,closedMsg:"We are closed right now. Please check back later."},discount:{on:false,pct:10,min:200},
  categories:D.map(function(c){return {id:uid(),name:c[0],art:c[1],items:c[2].map(function(x){return {id:uid(),name:x[0],desc:x[1],price:x[2],type:x[3],best:x[4]=="b",offer:"",from:"",to:"",out:false}})}})}}
 function mark(){dirty=true;$("savebar").hidden=false;$("status").textContent=""}
 window.onbeforeunload=function(e){if(dirty){e.preventDefault();e.returnValue=""}};
@@ -105,52 +118,52 @@ function token(){return Date.now()<AUTH.exp?Promise.resolve(AUTH.id):refresh(AUT
 $("lgo").onclick=function(){
  $("lerr").textContent="";
  post("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key="+FB_KEY,{email:$("em").value.trim(),password:$("pw").value,returnSecureToken:true}).then(function(d){
-  if(!d.idToken){$("lerr").textContent="Email ya password galat hai.";return}
+  if(!d.idToken){$("lerr").textContent="Incorrect email or password.";return}
   setAuth(d.idToken,d.refreshToken,d.expiresIn);start();
- }).catch(function(){$("lerr").textContent="Internet ya Firebase key check karo."});
+ }).catch(function(){$("lerr").textContent="Check your internet connection or Firebase key."});
 };
 $("out").onclick=function(){try{localStorage.removeItem("tj_ref")}catch(e){}dirty=false;location.reload()};
 function start(){
  $("login").hidden=true;$("app").hidden=false;
  if(CUSTOMER_URL){$("cu").href=CUSTOMER_URL;$("cu").hidden=false}
- $("view").innerHTML='<p class="sub">Load ho raha hai…</p>';
+ $("view").innerHTML='<p class="sub">Loading…</p>';
  fetch(DOC+"?key="+FB_KEY).then(function(r){if(r.status==404)return null;if(!r.ok)throw 0;return r.json()}).then(function(d){
-  if(d&&d.fields&&d.fields.json){CFG=JSON.parse(d.fields.json.stringValue)}else{CFG=defaults();mark()}
-  view();
- }).catch(function(){$("view").innerHTML='<p class="err">Menu load nahi ho paya. FB_KEY aur FB_PROJECT check karo.</p>'});
+  if(d&&d.fields&&d.fields.json){CFG=JSON.parse(d.fields.json.stringValue);if(migrate(CFG))mark()}else{CFG=defaults();mark()}
+  view();if(TAB=="orders")loadOrders();
+ }).catch(function(){$("view").innerHTML='<p class="err">Could not load the menu. Check FB_KEY and FB_PROJECT.</p>'});
 }
-if(FB_KEY.indexOf("PASTE")==0){$("lerr").textContent="Pehle file ke upar FB_KEY aur FB_PROJECT paste karo."}
+if(FB_KEY.indexOf("PASTE")==0){$("lerr").textContent="First paste FB_KEY and FB_PROJECT at the top of this file."}
 else{var r0=null;try{r0=localStorage.getItem("tj_ref")}catch(e){}if(r0)refresh(r0).then(start).catch(function(){})}
 
 /* ---------- save ---------- */
 $("save").onclick=function(){
  var b=this;b.disabled=true;b.textContent="Saving…";
  token().then(function(t){return fetch(DOC+"?updateMask.fieldPaths=json&key="+FB_KEY,{method:"PATCH",headers:{"Authorization":"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify({fields:{json:{stringValue:JSON.stringify(CFG)}}})})})
- .then(function(r){if(!r.ok)throw r.status;dirty=false;$("savebar").hidden=true;$("status").textContent="Live ho gaya ✓";setTimeout(function(){if(!dirty)$("status").textContent=""},4000)})
- .catch(function(e){alert(e==403?"Permission nahi hai. Firebase rules mein apna email check karo.":"Save nahi ho paya. Dobara try karo.")})
- .then(function(){b.disabled=false;b.textContent="Save aur live karo"});
+ .then(function(r){if(!r.ok)throw r.status;dirty=false;$("savebar").hidden=true;$("status").textContent="Published ✓";setTimeout(function(){if(!dirty)$("status").textContent=""},4000)})
+ .catch(function(e){alert(e==403?"Permission denied. Check your email in the Firebase rules.":"Could not save. Please try again.")})
+ .then(function(){b.disabled=false;b.textContent="Save & publish"});
 };
 
 /* ---------- views ---------- */
 function sw(k,on){return '<label class="sw"><input type="checkbox" data-k="'+k+'"'+(on?" checked":"")+' aria-label="switch"><i></i></label>'}
 function view(){
- ({menu:vMenu,prices:vPrices,offers:vOffers,settings:vSettings})[TAB]();
+ ({orders:vOrders,menu:vMenu,prices:vPrices,offers:vOffers,settings:vSettings})[TAB]();
  document.querySelectorAll("#nav button").forEach(function(b){b.setAttribute("aria-current",b.dataset.t==TAB)});
 }
 function vMenu(){
- var h='<div class="card row"><div><b>Dukaan abhi</b><div class="sub">'+(CFG.settings.open?"Khuli hai, customers order kar sakte hain":"Band hai, customers order nahi kar sakte")+'</div></div>'+sw("open",CFG.settings.open)+'</div>';
+ var h='<div class="card row"><div><b>Shop status</b><div class="sub">'+(CFG.settings.open?"Open: customers can place orders":"Closed: customers cannot place orders")+'</div></div>'+sw("open",CFG.settings.open)+'</div>';
  CFG.categories.forEach(function(c,ci){
   h+='<div class="cat"><div class="chead"><h2>'+esc(c.name)+'</h2><button class="lnk" data-a="ecat" data-c="'+ci+'">Edit</button></div>';
   c.items.forEach(function(it,ii){
    h+='<div class="irow"><span class="dot '+it.type+'"></span><div class="in"><b>'+esc(it.name)+'</b><span class="sub">₹'+it.price+(it.best?" · Bestseller":"")+(it.offer?" · "+esc(it.offer):"")+(it.from?" · "+it.from+"–"+it.to:"")+'</span></div>'+sw("a-"+ci+"-"+ii,!it.out)+'<button class="lnk" data-a="eit" data-c="'+ci+'" data-i="'+ii+'">Edit</button></div>';
   });
-  h+='<button class="add" data-a="nit" data-c="'+ci+'">+ Naya item</button></div>';
+  h+='<button class="add" data-a="nit" data-c="'+ci+'">+ New item</button></div>';
  });
- h+='<button class="add big" data-a="ncat">+ Naya category</button><p class="sub">Switch ON = available. OFF = customers ko Sold out dikhega.</p>';
+ h+='<button class="add big" data-a="ncat">+ New category</button><p class="sub">Switch ON = available. OFF = shown as Sold out to customers.</p>';
  $("view").innerHTML=h;
 }
 function vPrices(){
- var h='<p class="sub">Yahan se saare prices ek saath badlo, phir neeche Save dabao.</p>';
+ var h='<p class="sub">Change all prices here, then press Save below.</p>';
  CFG.categories.forEach(function(c,ci){
   h+='<h2 class="ph">'+esc(c.name)+'</h2>';
   c.items.forEach(function(it,ii){h+='<label class="prow"><span>'+esc(it.name)+'</span><span class="pin">₹<input type="number" min="0" inputmode="numeric" data-p="'+ci+'-'+ii+'" value="'+esc(it.price)+'"></span></label>'});
@@ -159,20 +172,79 @@ function vPrices(){
 }
 function vOffers(){
  var d=CFG.discount;
- var h='<div class="card"><div class="row"><div><b>Order par discount</b><div class="sub">Bade order par percent chhoot</div></div>'+sw("disc",d.on)+'</div>'+
- '<label>Kitne ₹ ke order par</label><input type="number" min="0" inputmode="numeric" data-f="d.min" value="'+esc(d.min)+'">'+
- '<label>Kitne percent discount</label><input type="number" min="0" max="90" inputmode="numeric" data-f="d.pct" value="'+esc(d.pct)+'"></div>'+
- '<h2 class="ph">Item par Offer tag</h2><p class="sub">Jaise "Combo deal" ya "10% off". Khali chhodo toh tag nahi dikhega.</p>';
+ var h='<div class="card"><div class="row"><div><b>Order discount</b><div class="sub">Percentage off on bigger orders</div></div>'+sw("disc",d.on)+'</div>'+
+ '<label>Minimum order amount (₹)</label><input type="number" min="0" inputmode="numeric" data-f="d.min" value="'+esc(d.min)+'">'+
+ '<label>Discount percentage</label><input type="number" min="0" max="90" inputmode="numeric" data-f="d.pct" value="'+esc(d.pct)+'"></div>'+
+ '<h2 class="ph">Item offer tags</h2><p class="sub">For example "Combo deal" or "10% off". Leave empty for no tag.</p>';
  CFG.categories.forEach(function(c,ci){c.items.forEach(function(it,ii){h+='<label class="prow"><span>'+esc(it.name)+'</span><span style="width:48%"><input data-o="'+ci+'-'+ii+'" value="'+esc(it.offer)+'" placeholder="Offer tag"></span></label>'})});
  $("view").innerHTML=h;
 }
 function vSettings(){
  var s=CFG.settings;
- $("view").innerHTML='<div class="card"><label>Restaurant ka naam</label><input data-f="s.name" value="'+esc(s.name)+'">'+
- '<label>WhatsApp number (91 ke saath, jaise 917091328594)</label><input data-f="s.whatsapp" inputmode="numeric" value="'+esc(s.whatsapp)+'">'+
+ $("view").innerHTML='<div class="card"><label>Restaurant name</label><input data-f="s.name" value="'+esc(s.name)+'">'+
+ '<label>WhatsApp number (with country code, e.g. 917091328594)</label><input data-f="s.whatsapp" inputmode="numeric" value="'+esc(s.whatsapp)+'">'+
  '<label>Delivery charge (₹)</label><input type="number" min="0" inputmode="numeric" data-f="s.delivery" value="'+esc(s.delivery)+'">'+
  '<label>Minimum order (₹)</label><input type="number" min="0" inputmode="numeric" data-f="s.minOrder" value="'+esc(s.minOrder)+'">'+
- '<label>Dukaan band hone par message</label><input data-f="s.closedMsg" value="'+esc(s.closedMsg)+'"></div>';
+ '<label>Message shown when the shop is closed</label><input data-f="s.closedMsg" value="'+esc(s.closedMsg)+'"></div>';
+}
+
+/* ---------- orders ---------- */
+function money(n){return "₹"+Math.round(n||0)}
+function fmt(t){return new Date(t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}
+function rangeTs(r){var d=new Date();d.setHours(0,0,0,0);var s=d.getTime(),D=86400000;
+ if(r=="today")return [s,s+D];if(r=="yest")return [s-D,s];if(r=="week")return [s-6*D,s+D];return [s-29*D,s+D]}
+function loadOrders(){
+ OR.loading=true;OR.err="";vOrders();
+ var rg=rangeTs(OR.range);
+ token().then(function(t){return fetch(BASE+":runQuery?key="+FB_KEY,{method:"POST",headers:{"Authorization":"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify({structuredQuery:{from:[{collectionId:"orders"}],where:{compositeFilter:{op:"AND",filters:[{fieldFilter:{field:{fieldPath:"ts"},op:"GREATER_THAN_OR_EQUAL",value:{integerValue:String(rg[0])}}},{fieldFilter:{field:{fieldPath:"ts"},op:"LESS_THAN",value:{integerValue:String(rg[1])}}}]}},orderBy:[{field:{fieldPath:"ts"},direction:"DESCENDING"}],limit:500}})})})
+ .then(function(r){if(!r.ok)throw r.status;return r.json()})
+ .then(function(a){OR.list=a.filter(function(x){return x.document}).map(function(x){var f=x.document.fields,o={};try{o=JSON.parse(f.json.stringValue)}catch(e){}o._id=x.document.name.split("/").pop();o._st=f.status?f.status.stringValue:"new";o._ts=+f.ts.integerValue;return o})})
+ .catch(function(e){OR.err=e==403?"Permission denied. Check your Firebase rules.":"Could not load orders."})
+ .then(function(){OR.loading=false;if(TAB=="orders")vOrders()});
+}
+function vOrders(){
+ var R=[["today","Today"],["yest","Yesterday"],["week","7 days"],["month","30 days"]];
+ var h='<div class="chips">'+R.map(function(x){return '<button class="chip'+(OR.range==x[0]?" on":"")+'" data-a="orange" data-r="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div><div class="two" style="margin:8px 0"><button class="add" style="margin:0" data-a="oref">Refresh</button><button class="add" style="margin:0" data-a="ocsv">Download CSV</button></div>';
+ if(OR.loading){$("view").innerHTML=h+'<p class="sub">Loading…</p>';return}
+ if(OR.err){$("view").innerHTML=h+'<p class="err">'+OR.err+'</p>';return}
+ var L=OR.list,live=L.filter(function(o){return o._st!="cancelled"}),sales=0,by={},top={};
+ live.forEach(function(o){var t=+o.total||0;sales+=t;var b=by[o.type]||(by[o.type]={n:0,s:0});b.n++;b.s+=t;(o.items||[]).forEach(function(i){var x=top[i.n]||(top[i.n]={q:0,r:0});x.q+=i.q;x.r+=i.q*i.p})});
+ var n=live.length;
+ h+='<div class="stats"><div class="stat"><b>'+money(sales)+'</b><span>Total sales</span></div><div class="stat"><b>'+n+'</b><span>Orders</span></div><div class="stat"><b>'+money(n?sales/n:0)+'</b><span>Average order</span></div></div>';
+ if(n){
+  h+='<div class="card"><b>Order type</b>'+Object.keys(by).map(function(k){return '<div class="row sub" style="padding:4px 0"><span>'+esc(k)+'</span><span>'+by[k].n+' orders · '+money(by[k].s)+'</span></div>'}).join("")+'</div>';
+  var ks=Object.keys(top).sort(function(a,b){return top[b].q-top[a].q}).slice(0,8),mx=top[ks[0]].q;
+  h+='<div class="card"><b>Top selling items</b>'+ks.map(function(k){return '<div style="margin-top:10px"><div class="row"><span>'+esc(k)+'</span><span class="sub">'+top[k].q+' sold · '+money(top[k].r)+'</span></div><div class="tb" style="width:'+Math.max(6,top[k].q/mx*100)+'%"></div></div>'}).join("")+'</div>';
+ }
+ if(!L.length)h+='<p class="sub">No orders in this period.</p>';
+ L.forEach(function(o){var c=o._st=="cancelled";
+  h+='<div class="ord'+(c?" x":(o._st=="new"?" n":""))+'"><div class="row"><b>'+esc(o.name)+'</b><b>'+money(o.total)+'</b></div><div class="sub">'+fmt(o._ts)+' · '+esc(o.type)+" · "+(SL[o._st]||esc(o._st))+'</div><div style="margin-top:4px">'+(o.items||[]).map(function(i){return i.q+"× "+esc(i.n)}).join(", ")+'</div>'+
+  (o.place?'<div class="sub">'+(o.type=="Delivery"?"Address: ":"Table: ")+esc(o.place)+'</div>':"")+
+  (o.phone?'<div class="sub">Mobile: <a href="tel:+91'+esc(o.phone)+'">+91 '+esc(o.phone)+'</a></div>':"")+
+  (o.notes?'<div class="sub">Notes: '+esc(o.notes)+'</div>':"")+
+  (o.disc?'<div class="sub">Discount: '+money(o.disc)+'</div>':"")+
+  '<div class="two">'+nextBtn(o)+'<button class="lnk" data-a="ocan" data-s="'+(c?"new":"cancelled")+'" data-id="'+esc(o._id)+'">'+(c?"Restore":"Cancel order")+'</button><button class="lnk" data-a="odel" data-id="'+esc(o._id)+'">Delete</button></div></div>';
+ });
+ $("view").innerHTML=h;
+}
+var SL={new:"New order",preparing:"Preparing",ready:"Ready",out:"Out for delivery",done:"Complete",cancelled:"CANCELLED"};
+function nextBtn(o){var f=o.type=="Delivery"?["new","preparing","ready","out","done"]:["new","preparing","ready","done"],i=f.indexOf(o._st);if(i<0||i>=f.length-1)return "";return '<button class="lnk" style="background:var(--ok);color:#fff;border-radius:8px" data-a="onext" data-s="'+f[i+1]+'" data-id="'+esc(o._id)+'">→ '+SL[f[i+1]]+'</button>'}
+function ordSet(id,st){
+ var o=OR.list.filter(function(x){return x._id==id})[0];if(!o)return;
+ token().then(function(t){return fetch(BASE+"/orders/"+id+"?updateMask.fieldPaths=status&key="+FB_KEY,{method:"PATCH",headers:{"Authorization":"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify({fields:{status:{stringValue:st}}})})})
+ .then(function(r){if(!r.ok)throw 0;o._st=st;vOrders()}).catch(function(){alert("Could not update the order.")});
+}
+function ordDel(id){
+ if(!confirm("Delete this order permanently?"))return;
+ token().then(function(t){return fetch(BASE+"/orders/"+id+"?key="+FB_KEY,{method:"DELETE",headers:{"Authorization":"Bearer "+t}})})
+ .then(function(r){if(!r.ok)throw 0;OR.list=OR.list.filter(function(x){return x._id!=id});vOrders()}).catch(function(){alert("Could not delete the order.")});
+}
+function ordCsv(){
+ var q=function(s){return '"'+String(s==null?"":s).replace(/"/g,'""')+'"'};
+ var rows=[["Date","Time","Name","Type","Mobile","Address/Table","Items","Subtotal","Discount","Delivery","Total","Status","Notes"]];
+ OR.list.forEach(function(o){var d=new Date(o._ts);rows.push([d.toLocaleDateString("en-IN"),d.toLocaleTimeString("en-IN"),o.name,o.type,o.phone,o.place,(o.items||[]).map(function(i){return i.q+"x "+i.n}).join("; "),o.sub,o.disc,o.del,o.total,o._st,o.notes])});
+ var b=new Blob(["\ufeff"+rows.map(function(r){return r.map(q).join(",")}).join("\n")],{type:"text/csv"});
+ var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="orders-"+OR.range+".csv";document.body.appendChild(a);a.click();a.remove();
 }
 
 /* ---------- modals ---------- */
@@ -181,38 +253,50 @@ function closeM(){$("modal").hidden=true;$("modal").innerHTML=""}
 function itemModal(ci,ii){
  var nw=ii==null,it=nw?{name:"",desc:"",price:"",type:"v",best:false,offer:"",from:"",to:"",out:false}:CFG.categories[ci].items[ii];
  var opts=CFG.categories.map(function(c,i){return '<option value="'+i+'"'+(i==ci?" selected":"")+'>'+esc(c.name)+'</option>'}).join("");
- modal('<h3>'+(nw?"Naya item":"Item edit karo")+'</h3>'+
- '<label>Naam</label><input id="f_n" value="'+esc(it.name)+'">'+
+ modal('<h3>'+(nw?"New item":"Edit item")+'</h3>'+
+ '<label>Name</label><input id="f_n" value="'+esc(it.name)+'">'+
  '<label>Description</label><input id="f_d" value="'+esc(it.desc)+'">'+
  '<label>Price (₹)</label><input id="f_p" type="number" min="0" inputmode="numeric" value="'+esc(it.price)+'">'+
  '<label>Category</label><select id="f_c">'+opts+'</select>'+
  '<label>Type</label><select id="f_t"><option value="v"'+(it.type=="v"?" selected":"")+'>Veg</option><option value="n"'+(it.type=="n"?" selected":"")+'>Non-veg</option></select>'+
- '<label>Offer tag (optional)</label><input id="f_o" value="'+esc(it.offer)+'" placeholder="Jaise: 10% off">'+
- '<label>Sirf is time par dikhao (optional, dono bharo)</label><div class="two"><input id="f_f" type="time" value="'+esc(it.from)+'"><input id="f_to" type="time" value="'+esc(it.to)+'"></div>'+
+ '<label>Offer tag (optional)</label><input id="f_o" value="'+esc(it.offer)+'" placeholder="e.g. 10% off">'+
+ '<label>Photo (optional)</label><input id="f_img" value="'+esc(it.img||"")+'" placeholder="images/egg-roll.jpg"><input id="f_file" type="file" accept="image/*" style="margin-top:8px"><div class="sub" id="f_note">Choose a photo: it will be resized and downloaded. Then upload it to the images folder on GitHub.</div>'+
+ '<label>Show only during these hours (optional, fill both)</label><div class="two"><input id="f_f" type="time" value="'+esc(it.from)+'"><input id="f_to" type="time" value="'+esc(it.to)+'"></div>'+
  '<label class="chk"><input type="checkbox" id="f_b"'+(it.best?" checked":"")+'> Bestseller tag</label>'+
  '<label class="chk"><input type="checkbox" id="f_x"'+(it.out?" checked":"")+'> Sold out</label>'+
  '<div class="err" id="merr" role="alert"></div><button class="btn" data-a="saveit" data-c="'+ci+'" data-i="'+(nw?"":ii)+'">Save item</button>'+
- (nw?"":'<button class="btn dng" data-a="delit" data-c="'+ci+'" data-i="'+ii+'">Item delete karo</button>')+
+ (nw?"":'<button class="btn dng" data-a="delit" data-c="'+ci+'" data-i="'+ii+'">Delete item</button>')+
  '<button class="lnk full" data-a="close">Cancel</button>');
 }
+function photoPick(f){
+ if(!f)return;
+ var nm=($("f_n").value.trim()||"item").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"item";
+ var img=new Image();
+ img.onload=function(){var s=Math.min(1,800/img.width),c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+  c.toBlob(function(b){var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=nm+".jpg";document.body.appendChild(a);a.click();a.remove();
+   $("f_img").value="images/"+nm+".jpg";$("f_note").textContent="Photo "+nm+".jpg downloaded ("+Math.round(b.size/1024)+" KB). Now upload it to the images folder on GitHub.";},"image/jpeg",0.82)};
+ img.onerror=function(){$("f_note").textContent="Could not open this photo. Try another one."};
+ img.src=URL.createObjectURL(f);
+}
+document.addEventListener("change",function(e){if(e.target.id=="f_file")photoPick(e.target.files[0])});
 function saveItem(b){
  var nm=$("f_n").value.trim(),pr=$("f_p").value;
- if(!nm||pr===""||+pr<0){$("merr").textContent="Naam aur price zaroori hai.";return}
+ if(!nm||pr===""||+pr<0){$("merr").textContent="Name and price are required.";return}
  var ci=+b.dataset.c,ii=b.dataset.i===""?null:+b.dataset.i,nc=+$("f_c").value;
- var it={id:ii==null?uid():CFG.categories[ci].items[ii].id,name:nm,desc:$("f_d").value.trim(),price:+pr,type:$("f_t").value,best:$("f_b").checked,offer:$("f_o").value.trim(),from:$("f_f").value,to:$("f_to").value,out:$("f_x").checked};
+ var it={id:ii==null?uid():CFG.categories[ci].items[ii].id,name:nm,desc:$("f_d").value.trim(),price:+pr,type:$("f_t").value,best:$("f_b").checked,offer:$("f_o").value.trim(),from:$("f_f").value,to:$("f_to").value,out:$("f_x").checked,img:$("f_img").value.trim()};
  if(!(it.from&&it.to)){it.from="";it.to=""}
  if(ii!=null&&nc==ci){CFG.categories[ci].items[ii]=it}else{if(ii!=null)CFG.categories[ci].items.splice(ii,1);CFG.categories[nc].items.push(it)}
  closeM();mark();view();
 }
 function catModal(ci){
  var nw=ci==null,c=nw?{name:"",art:"plate"}:CFG.categories[ci];
- modal('<h3>'+(nw?"Naya category":"Category edit karo")+'</h3><label>Naam</label><input id="c_n" value="'+esc(c.name)+'" placeholder="Jaise: Combos, Desserts, Soups">'+
- '<label>Tasveer</label><select id="c_a">'+ICONS.map(function(x){return '<option value="'+x[0]+'"'+(x[0]==c.art?" selected":"")+'>'+x[1]+'</option>'}).join("")+'</select>'+
+ modal('<h3>'+(nw?"New category":"Edit category")+'</h3><label>Name</label><input id="c_n" value="'+esc(c.name)+'" placeholder="e.g. Combos, Desserts, Soups">'+
+ '<label>Icon</label><select id="c_a">'+ICONS.map(function(x){return '<option value="'+x[0]+'"'+(x[0]==c.art?" selected":"")+'>'+x[1]+'</option>'}).join("")+'</select>'+
  '<div class="err" id="merr" role="alert"></div><button class="btn" data-a="savecat" data-c="'+(nw?"":ci)+'">Save category</button>'+
- (nw?"":'<button class="btn dng" data-a="delcat" data-c="'+ci+'">Category delete karo</button>')+'<button class="lnk full" data-a="close">Cancel</button>');
+ (nw?"":'<button class="btn dng" data-a="delcat" data-c="'+ci+'">Delete category</button>')+'<button class="lnk full" data-a="close">Cancel</button>');
 }
 function saveCat(b){
- var nm=$("c_n").value.trim();if(!nm){$("merr").textContent="Naam likho.";return}
+ var nm=$("c_n").value.trim();if(!nm){$("merr").textContent="Please enter a name.";return}
  if(b.dataset.c===""){CFG.categories.push({id:uid(),name:nm,art:$("c_a").value,items:[]})}
  else{var c=CFG.categories[+b.dataset.c];c.name=nm;c.art=$("c_a").value}
  closeM();mark();view();
@@ -223,16 +307,21 @@ document.addEventListener("click",function(e){
  var b=e.target.closest("[data-a]");if(!b)return;
  var a=b.dataset.a,c=+b.dataset.c,i=+b.dataset.i;
  if(a=="close")closeM();
+ else if(a=="orange"){OR.range=b.dataset.r;loadOrders()}
+ else if(a=="oref")loadOrders();
+ else if(a=="ocsv")ordCsv();
+ else if(a=="ocan"||a=="onext")ordSet(b.dataset.id,b.dataset.s);
+ else if(a=="odel")ordDel(b.dataset.id);
  else if(a=="eit")itemModal(c,i);
  else if(a=="nit")itemModal(c,null);
  else if(a=="ecat")catModal(c);
  else if(a=="ncat")catModal(null);
  else if(a=="saveit")saveItem(b);
  else if(a=="savecat")saveCat(b);
- else if(a=="delit"){if(confirm("Is item ko delete karein?")){CFG.categories[c].items.splice(i,1);closeM();mark();view()}}
- else if(a=="delcat"){if(confirm("Poori category aur uske saare items delete karein?")){CFG.categories.splice(c,1);closeM();mark();view()}}
+ else if(a=="delit"){if(confirm("Delete this item?")){CFG.categories[c].items.splice(i,1);closeM();mark();view()}}
+ else if(a=="delcat"){if(confirm("Delete this category and all its items?")){CFG.categories.splice(c,1);closeM();mark();view()}}
 });
-$("nav").onclick=function(e){var b=e.target.closest("button");if(b){TAB=b.dataset.t;view();window.scrollTo(0,0)}};
+$("nav").onclick=function(e){var b=e.target.closest("button");if(b){TAB=b.dataset.t;view();if(TAB=="orders")loadOrders();window.scrollTo(0,0)}};
 $("view").addEventListener("change",function(e){
  var k=e.target.dataset.k;if(!k)return;
  if(k=="open")CFG.settings.open=e.target.checked;

@@ -190,7 +190,27 @@ function vSettings(){
 }
 
 /* ---------- photos ---------- */
-function slug(n){return String(n||"item").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"item"}
+var DV_C={"\u0915":"k","\u0916":"kh","\u0917":"g","\u0918":"gh","\u0919":"n","\u091A":"ch","\u091B":"chh","\u091C":"j","\u091D":"jh","\u091E":"n","\u091F":"t","\u0920":"th","\u0921":"d","\u0922":"dh","\u0923":"n","\u0924":"t","\u0925":"th","\u0926":"d","\u0927":"dh","\u0928":"n","\u092A":"p","\u092B":"ph","\u092C":"b","\u092D":"bh","\u092E":"m","\u092F":"y","\u0930":"r","\u0932":"l","\u0935":"v","\u0936":"sh","\u0937":"sh","\u0938":"s","\u0939":"h","\u0958":"k","\u0959":"kh","\u095A":"g","\u095B":"j","\u095C":"r","\u095D":"rh","\u095E":"f","\u095F":"y"};
+var DV_V={"\u0905":"a","\u0906":"a","\u0907":"i","\u0908":"i","\u0909":"u","\u090A":"u","\u090B":"ri","\u090F":"e","\u0910":"ai","\u0913":"o","\u0914":"au","\u0911":"o"};
+var DV_M={"\u093E":"a","\u093F":"i","\u0940":"i","\u0941":"u","\u0942":"u","\u0943":"ri","\u0947":"e","\u0948":"ai","\u094B":"o","\u094C":"au","\u0949":"o"};
+function dv(s){var o="",i=0,c,t,m,e;
+ while(i<s.length){
+  c=s.charAt(i);t=DV_C[c];
+  if(t!==undefined){
+   if(c=="\u091C"&&s.charAt(i+1)=="\u094D"&&s.charAt(i+2)=="\u091E"){t="gy";i+=3}else{i++}
+   if(s.charAt(i)=="\u093C")i++;
+   m=s.charAt(i);
+   if(DV_M[m]!==undefined){o+=t+DV_M[m];i++}
+   else if(m=="\u094D"){o+=t;i++}
+   else{e=!m||!/[\u0900-\u097F]/.test(m);o+=t+(e?"":"a")}
+   continue}
+  if(DV_V[c]!==undefined){o+=DV_V[c];i++;continue}
+  if(c=="\u0902"||c=="\u0901"){o+="n";i++;continue}
+  if(c=="\u0903"){o+="h";i++;continue}
+  if(c=="\u093C"||c=="\u094D"){i++;continue}
+  o+=c;i++}
+ return o}
+function slug(n){n=String(n||"item").trim();var u=/[\u0900-\u097F]/.test(n)?dv(n):n;var b=u.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"item";if(/^[\x00-\x7f]*$/.test(u))return b;var h=5381,i;for(i=0;i<u.length;i++)h=((h<<5)+h+u.charCodeAt(i))>>>0;return b+"-"+h.toString(36).slice(0,6)}
 function vPhotos(){
  var h='<p class="sub">Choose a photo for each item. It is resized and downloaded as <b>item-name.jpg</b>. Then upload all downloaded files to the <b>images</b> folder on GitHub. The menu picks them up automatically, no need to edit the item.</p>';
  CFG.categories.forEach(function(c){
@@ -298,7 +318,7 @@ function itemModal(ci,ii){
 }
 function photoPick(f){
  if(!f)return;
- var nm=($("f_n").value.trim()||"item").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"item";
+ var nm=slug($("f_n").value.trim()||"item");
  var img=new Image();
  img.onload=function(){var s=Math.min(1,800/img.width),c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);
   c.toBlob(function(b){var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=nm+".jpg";document.body.appendChild(a);a.click();a.remove();

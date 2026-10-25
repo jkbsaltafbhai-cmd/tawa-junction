@@ -45,6 +45,7 @@ label{display:block;font-weight:500;font-size:14px;margin:12px 0 4px}
 .sw i::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s}
 .sw input:checked+i{background:var(--ok)}.sw input:checked+i::after{transform:translateX(20px)}
 .sw input:focus-visible+i,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold)}
+.nb{background:var(--red);color:#fff;text-align:center;padding:12px;font-weight:700;cursor:pointer;position:sticky;top:56px;z-index:4}
 .th{width:46px;height:46px;border-radius:8px;object-fit:cover;background:var(--ln);flex:none}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px}
 .chip{flex:none;border:1.5px solid var(--ln);background:var(--sf);color:var(--ink);border-radius:999px;padding:8px 16px;font:700 14px "DM Sans",sans-serif;cursor:pointer}
@@ -77,7 +78,8 @@ nav button[aria-current="true"]{color:var(--red);box-shadow:inset 0 3px var(--re
 </div>
 
 <div id="app" hidden>
-<header><div class="wrap"><h1 style="font-size:20px">Admin</h1><span id="status"></span><a id="cu" class="lnk" target="_blank" rel="noopener" hidden>Customer menu ↗</a><button class="lnk" id="out">Logout</button></div></header>
+<header><div class="wrap"><h1 style="font-size:20px">Admin</h1><span id="status"></span><a id="cu" class="lnk" target="_blank" rel="noopener" hidden>Customer menu ↗</a><button class="lnk" id="alertBtn">Alerts: Off</button><button class="lnk" id="out">Logout</button></div></header>
+<div id="nb" class="nb" hidden></div>
 <main class="wrap" id="view"></main>
 <div id="savebar" hidden><div class="wrap"><span class="sub" style="flex:1">You have unsaved changes.</span><button class="btn" id="save" style="width:auto;padding:12px 18px">Save &amp; publish</button></div></div>
 <nav id="nav"><button data-t="orders">Orders</button><button data-t="menu">Menu</button><button data-t="prices">Prices</button><button data-t="offers">Offers</button><button data-t="photos">Photos</button><button data-t="settings">Settings</button></nav>
@@ -182,12 +184,33 @@ function vOffers(){
 }
 function vSettings(){
  var s=CFG.settings;
- $("view").innerHTML='<div class="card row"><div><b>Customer order tracker</b><div class="sub">Shows order progress to customers. Turn off on busy days.</div></div>'+sw("trk",s.tracker!==false)+'</div><div class="card"><label>Restaurant name</label><input data-f="s.name" value="'+esc(s.name)+'">'+
+ var om=s.orderMethod||"whatsapp";
+ $("view").innerHTML='<div class="card"><label style="margin-top:0">How customers send orders</label><select data-f="s.orderMethod">'+[["whatsapp","WhatsApp only"],["direct","Direct only (no WhatsApp)"],["both","Both: Place order and WhatsApp"]].map(function(x){return '<option value="'+x[0]+'"'+(om==x[0]?" selected":"")+'>'+x[1]+'</option>'}).join("")+'</select><div class="sub" style="margin-top:6px">Direct orders show up in the Orders tab. Turn on Alerts in the top bar to hear new orders.</div></div><div class="card row"><div><b>Customer order tracker</b><div class="sub">Shows order progress to customers. Turn off on busy days.</div></div>'+sw("trk",s.tracker!==false)+'</div><div class="card"><label>Restaurant name</label><input data-f="s.name" value="'+esc(s.name)+'">'+
  '<label>WhatsApp number (with country code, e.g. 917091328594)</label><input data-f="s.whatsapp" inputmode="numeric" value="'+esc(s.whatsapp)+'">'+
  '<label>Delivery charge (₹)</label><input type="number" min="0" inputmode="numeric" data-f="s.delivery" value="'+esc(s.delivery)+'">'+
  '<label>Minimum order (₹)</label><input type="number" min="0" inputmode="numeric" data-f="s.minOrder" value="'+esc(s.minOrder)+'">'+
  '<label>Message shown when the shop is closed</label><input data-f="s.closedMsg" value="'+esc(s.closedMsg)+'"></div>';
 }
+
+/* ---------- new order alerts ---------- */
+var AL={on:false,ts:0,tm:null,ctx:null};
+function beep(){try{var c=AL.ctx;[0,0.3,0.6].forEach(function(d){var o=c.createOscillator(),g=c.createGain();o.frequency.value=880;o.connect(g);g.connect(c.destination);g.gain.setValueAtTime(0.3,c.currentTime+d);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+d+0.22);o.start(c.currentTime+d);o.stop(c.currentTime+d+0.25)})}catch(e){}}
+function alertPoll(){
+ token().then(function(t){return fetch(BASE+":runQuery?key="+FB_KEY,{method:"POST",headers:{"Authorization":"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify({structuredQuery:{from:[{collectionId:"orders"}],where:{fieldFilter:{field:{fieldPath:"ts"},op:"GREATER_THAN",value:{integerValue:String(AL.ts)}}},orderBy:[{field:{fieldPath:"ts"},direction:"ASCENDING"}],limit:20}})})})
+ .then(function(r){return r.json()}).then(function(a){
+  var d=a.filter(function(x){return x.document});if(!d.length)return;
+  AL.ts=Math.max.apply(null,d.map(function(x){return +x.document.fields.ts.integerValue}));
+  beep();$("nb").textContent=d.length+" new order"+(d.length>1?"s":"")+" – tap to view";$("nb").hidden=false;document.title="(New order) Admin";
+  if(TAB=="orders")loadOrders();
+ }).catch(function(){});
+}
+$("alertBtn").onclick=function(){
+ AL.on=!AL.on;
+ if(AL.on){AL.ctx=AL.ctx||new (window.AudioContext||window.webkitAudioContext)();if(AL.ctx.resume)AL.ctx.resume();AL.ts=Date.now();AL.tm=setInterval(alertPoll,45000);beep()}
+ else{clearInterval(AL.tm)}
+ this.textContent="Alerts: "+(AL.on?"On":"Off");
+};
+$("nb").onclick=function(){this.hidden=true;document.title="Admin – Tawa Junction";TAB="orders";view();loadOrders()};
 
 /* ---------- photos ---------- */
 var DV_C={"\u0915":"k","\u0916":"kh","\u0917":"g","\u0918":"gh","\u0919":"n","\u091A":"ch","\u091B":"chh","\u091C":"j","\u091D":"jh","\u091E":"n","\u091F":"t","\u0920":"th","\u0921":"d","\u0922":"dh","\u0923":"n","\u0924":"t","\u0925":"th","\u0926":"d","\u0927":"dh","\u0928":"n","\u092A":"p","\u092B":"ph","\u092C":"b","\u092D":"bh","\u092E":"m","\u092F":"y","\u0930":"r","\u0932":"l","\u0935":"v","\u0936":"sh","\u0937":"sh","\u0938":"s","\u0939":"h","\u0958":"k","\u0959":"kh","\u095A":"g","\u095B":"j","\u095C":"r","\u095D":"rh","\u095E":"f","\u095F":"y"};
@@ -265,7 +288,7 @@ function vOrders(){
  }
  if(!L.length)h+='<p class="sub">No orders in this period.</p>';
  L.forEach(function(o){var c=o._st=="cancelled";
-  h+='<div class="ord'+(c?" x":(o._st=="new"?" n":""))+'"><div class="row"><b>'+esc(o.name)+'</b><b>'+money(o.total)+'</b></div><div class="sub">'+fmt(o._ts)+' · '+esc(o.type)+" · "+(SL[effSt(o)]||esc(o._st))+'</div><div style="margin-top:4px">'+(o.items||[]).map(function(i){return i.q+"× "+esc(i.n)}).join(", ")+'</div>'+
+  h+='<div class="ord'+(c?" x":(o._st=="new"?" n":""))+'"><div class="row"><b>'+esc(o.name)+'</b><b>'+money(o.total)+'</b></div><div class="sub">'+fmt(o._ts)+' · '+esc(o.type)+" · "+(SL[effSt(o)]||esc(o._st))+(o.m=="direct"?" · Direct":o.m=="whatsapp"?" · WhatsApp":"")+'</div><div style="margin-top:4px">'+(o.items||[]).map(function(i){return i.q+"× "+esc(i.n)}).join(", ")+'</div>'+
   (o.place?'<div class="sub">'+(o.type=="Delivery"?"Address: ":"Table: ")+esc(o.place)+'</div>':"")+
   (o.phone?'<div class="sub">Mobile: <a href="tel:+91'+esc(o.phone)+'">+91 '+esc(o.phone)+'</a></div>':"")+
   (o.notes?'<div class="sub">Notes: '+esc(o.notes)+'</div>':"")+
@@ -289,8 +312,8 @@ function ordDel(id){
 }
 function ordCsv(){
  var q=function(s){return '"'+String(s==null?"":s).replace(/"/g,'""')+'"'};
- var rows=[["Date","Time","Name","Type","Mobile","Address/Table","Items","Subtotal","Discount","Delivery","Total","Status","Notes"]];
- OR.list.forEach(function(o){var d=new Date(o._ts);rows.push([d.toLocaleDateString("en-IN"),d.toLocaleTimeString("en-IN"),o.name,o.type,o.phone,o.place,(o.items||[]).map(function(i){return i.q+"x "+i.n}).join("; "),o.sub,o.disc,o.del,o.total,o._st,o.notes])});
+ var rows=[["Date","Time","Name","Type","Mobile","Address/Table","Items","Subtotal","Discount","Delivery","Total","Status","Notes","Source"]];
+ OR.list.forEach(function(o){var d=new Date(o._ts);rows.push([d.toLocaleDateString("en-IN"),d.toLocaleTimeString("en-IN"),o.name,o.type,o.phone,o.place,(o.items||[]).map(function(i){return i.q+"x "+i.n}).join("; "),o.sub,o.disc,o.del,o.total,o._st,o.notes,o.m])});
  var b=new Blob(["\ufeff"+rows.map(function(r){return r.map(q).join(",")}).join("\n")],{type:"text/csv"});
  var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="orders-"+OR.range+".csv";document.body.appendChild(a);a.click();a.remove();
 }
